@@ -1,376 +1,98 @@
-buildscript {
-    repositories {
-        maven { url = 'https://files.minecraftforge.net/maven' }
-        maven { url = 'http://repo.spongepowered.org/maven' }
-        jcenter()
-        mavenCentral()
-        gradlePluginPortal()
-    }
-    dependencies {
-        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '3.+', changing: true
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath 'org.spongepowered:mixingradle:0.7-SNAPSHOT'
-        // rolled back from 4.0.4 to 4.0.1 due to #425: https://github.com/johnrengelman/shadow/issues/425
-        classpath 'com.github.jengelman.gradle.plugins:shadow:4.0.1'
-        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:latest.release"
-        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.+'
-    }
+plugins {
+    id("fabric-loom") version "0.5-SNAPSHOT"
+    id "org.jetbrains.kotlin.jvm" version "$kotlin_version"
 }
 
-// there are occasionally exceptions during building. However, I can't tell IDEA to pass --stacktrace to the build
-// command, only to run configs. Thus, I have to do it manually. https://stackoverflow.com/a/29983737/1541907
-gradle.startParameter.showStacktrace = org.gradle.api.logging.configuration.ShowStacktrace.ALWAYS
+import net.fabricmc.loom.task.RunClientTask
+import net.fabricmc.loom.task.RunServerTask
 
-def maven_version = mod_version
-def snapshotBranch = System.getenv('SNAPSHOT_BRANCH')
-if(snapshotBranch != null) {
-    if(snapshotBranch.startsWith('refs/heads/'))
-        snapshotBranch = snapshotBranch.substring('refs/heads/'.length())
-    maven_version = snapshotBranch.replaceAll('[^.\\w-]', '-') + '-SNAPSHOT'
-    logger.lifecycle("Using SNAPSHOT version `{}`", version)
-}
-
-// pass `-PliblibVersion=foo` to set the liblib version directly. Useful for publishing to the local maven repository
-if(hasProperty('liblibVersion')) {
-    maven_version = liblibVersion
-}
-
-ext.allmodules = rootProject.subprojects.findAll { it.findProperty("non_module") != "true" }
-
-// this is populated by the modules, since the modules need to know about each other's relocation packages
 
 allprojects {
-    apply plugin: 'java-library'
+    apply plugin: "fabric-loom"
+    apply plugin: "org.jetbrains.kotlin.jvm"
 
-    ext.allmodules = rootProject.allmodules
+    tasks.withType(JavaCompile).configureEach {
+        def targetVersion = 8
+        if (JavaVersion.current().isJava9Compatible()) {
+            it.options.release = targetVersion
+        } else {
+            sourceCompatibility = JavaVersion.toVersion(targetVersion)
+            targetCompatibility = JavaVersion.toVersion(targetVersion)
+        }
+    }
+
+    group = "com.teamwizardry.librarianlib"
+
+    sourceSets {
+        testmod {
+            compileClasspath += main.compileClasspath
+            runtimeClasspath += main.runtimeClasspath
+        }
+    }
+
+    task runTestmodClient(type: RunClientTask) {
+        classpath sourceSets.testmod.runtimeClasspath
+    }
+
+    task runTestmodServer(type: RunServerTask) {
+        classpath sourceSets.testmod.runtimeClasspath
+    }
+
+    dependencies {
+        minecraft "com.mojang:minecraft:1.16.4"
+        mappings "net.fabricmc:yarn:1.16.4+build.7:v2"
+
+        modImplementation("net.fabricmc:fabric-loader:0.10.8")
+        modImplementation("net.fabricmc.fabric-api:fabric-api:0.29.0+1.16")
+        modImplementation("net.fabricmc:fabric-language-kotlin:1.4.21+build.1")
+    }
+
+    version = 1.0
+
+
+    configurations {
+        dev
+    }
+
+    loom {
+        shareCaches = true
+    }
 
     repositories {
         mavenLocal()
-        jcenter()
-        mavenCentral()
-        maven { url = "https://jitpack.io" }
-        maven { url = "https://minecraft.curseforge.com/api/maven/" }
-        maven { url = 'http://repo.spongepowered.org/maven' }
     }
 
-    version = maven_version
-    group = "com.teamwizardry.librarianlib"
-}
-
-apply plugin: 'eclipse'
-apply plugin: 'idea'
-
-archivesBaseName = "librarianlib"
-
-sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
-
-configure(allmodules) {
-    apply from: "$rootDir/gradle/module.gradle"
-}
-
-dependencies {
-    // We need to compile the mixin connector against Mixin, however, pulling in the actual library triggers the Mixin
-    // plugin, which leads to odd issues. To resolve this I created a skeleton jar to build against which contains only
-    // the `IMixinConnector` interface and an empty `Mixins.addConfiguration` method.
-    compileOnly(files("$rootDir/libs/mixin-connector-api.jar"))
-}
-
-// =====================================================================================================================
-// Build setup
-// =====================================================================================================================
-
-ext.productionModules = allmodules.findAll { it.name != "testbase" }
-
-//region Merged file generation
-
-apply from: "$rootDir/gradle/generatorUtils.gradle"
-
-// Generated files:
-// - MixinConnector.java
-//   - generated by merging all the `META-INF/mixins.txt` files
-// - META-INF/coremods.json
-//   - generated by merging from all the `META-INF/coremods.json` files
-// - META-INF/mods.toml
-//   - generated by appending all the `META-INF/dependencies.toml` files to the core `META-INF/mods.toml` file
-// - pack.mcmeta
-//   - copied from the core module (I copy it here so I can do a blanket exclude later)
-task generateFiles {
-    ext.genJava = "$buildDir/generated/main/java"
-    ext.genResources = "$buildDir/generated/main/resources"
-    def coreResources = project(":core").projectDir.path + '/src/main/resources'
-    ext.coreModsToml = file("$coreResources/META-INF/mods.toml")
-    ext.corePackMcmeta = file("$coreResources/pack.mcmeta")
-
-    ext.allDependencies = productionModules.collect { file("$it.projectDir/src/main/resources/META-INF/dependencies.toml") }
-    ext.coremodFiles = files(productionModules.collect {
-        fileTree(dir: "$it.projectDir/src/main/resources/META-INF/ll/$it.name/asm", includes: ['*.js'])
-    })
-    ext.mixinFiles = files(productionModules.collect {
-        fileTree(dir: "$it.projectDir/src/main/resources/META-INF/ll/$it.name/mixin", includes: ['*.json'])
-    })
-
-    inputs.files(
-            coreModsToml,
-            corePackMcmeta,
-            allDependencies,
-            coremodFiles,
-            mixinFiles
-    )
-
-    ext.mixinConnectorOut = file("$genJava/com/teamwizardry/librarianlib/MixinConnector.java")
-    ext.coremodsOut = file("$genResources/META-INF/coremods.json")
-    ext.modsTomlOut = file("$genResources/META-INF/mods.toml")
-    ext.packMcmetaOut = file("$genResources/pack.mcmeta")
-    outputs.files(
-            mixinConnectorOut,
-            coremodsOut,
-            packMcmetaOut,
-            modsTomlOut
-    )
-
-    doLast {
-        mixinConnectorOut.parentFile.mkdirs()
-        coremodsOut.parentFile.mkdirs()
-
-        mixinConnectorOut.text = GeneratorUtils.generateMixinConnector("com.teamwizardry.librarianlib", "MixinConnector", mixinFiles)
-        coremodsOut.text = GeneratorUtils.generateCoremodsJson(coremodFiles)
-
-        // copy the pack.mcmeta file
-        packMcmetaOut.text = corePackMcmeta.text
-
-        // add additional external dependencies to main mods.toml
-        modsTomlOut.text = (coreModsToml.text + allDependencies
-                .findAll { it.exists() }
-                .collect { it.text }.join("\n")).replaceAll("@version@", mod_version)
-
+    jar {
+        classifier = "dev"
     }
-}
-sourceSets.main.java.srcDirs(generateFiles.genJava)
-sourceSets.main.resources.srcDirs(generateFiles.genResources)
-compileJava.dependsOn(generateFiles)
 
-CopySpec createMergeSpec(String jarTaskName) {
-    return copySpec {
-        duplicatesStrategy = 'INCLUDE'
-        productionModules.each {
-//        from(file("${mod.compileJava.temporaryDir}/${mod.sourceSets.main.refMap}"))
-            from(zipTree(it.tasks.getByName(jarTaskName).outputs.files.singleFile)) {
-                exclude '**/SkeletonMod.*'
-                exclude '**/MixinConnector.*'
-                exclude 'META-INF/coremods.json'
-                exclude 'META-INF/mods.toml'
-                exclude 'META-INF/dependencies.toml'
-                exclude 'META-INF/mixins.txt'
-                exclude 'pack.mcmeta'
-                // the core module generates an `index.txt` that stores a list of modules to load at runtime. This list
-                // includes the dev-only testbase module, so we have to strip that out first
-                filesMatching('META-INF/ll/core/modules.txt') {
-                    filter { it == "testbase" ? null : it }
-                }
+    afterEvaluate {
+        remapJar {
+            input = file("${project.buildDir}/libs/$archivesBaseName-${version}-dev.jar")
+            archiveName = "${archivesBaseName}-${version}.jar"
+        }
+
+        artifacts {
+            dev file: file("${project.buildDir}/libs/$archivesBaseName-${version}-dev.jar"), type: "jar", builtBy: jar
+        }
+
+        processResources {
+            inputs.property "version", project.version
+
+            from(sourceSets.main.resources.srcDirs) {
+                include "fabric.mod.json"
+                expand "version": project.version
+            }
+
+            from(sourceSets.main.resources.srcDirs) {
+                exclude "fabric.mod.json"
             }
         }
-    }
-}
-//endregion
 
-//region Merged jar configurations
-
-def attributes = [
-        "Implementation-Title"    : "LibrarianLib",
-        "Implementation-Version"  : "$mod_version",
-        "Implementation-Vendor"   : "Team Wizardry",
-        "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
-        // Specify the IMixinConnector. This class is present at runtime, but the runtime manifest
-        // specifies a different mixin container with only the mixin files from that specific module.
-        // https://github.com/SpongePowered/Mixin/wiki/Release-Notes---Mixin-0.8#toolchain-and-environment-changes
-        "MixinConnector"          : "com.teamwizardry.librarianlib.MixinConnector"
-]
-
-jar {
-    enabled = false
-}
-
-task obfJar(type: Jar) {
-    classifier = ''
-    manifest.attributes(attributes)
-    includeEmptyDirs = false
-    duplicatesStrategy = 'WARN'
-
-    from sourceSets.main.output
-    afterEvaluate {
-        productionModules.each {
-            dependsOn it.obfJar
-        }
-        with createMergeSpec('obfJar')
-    }
-    dependsOn(compileJava)
-    dependsOn(processResources)
-}
-
-task deobfJar(type: Jar) {
-    classifier = 'deobf'
-    manifest.attributes(attributes)
-    includeEmptyDirs = false
-    duplicatesStrategy = 'WARN'
-
-    from sourceSets.main.output
-    afterEvaluate {
-        productionModules.each {
-            dependsOn it.deobfJar
-        }
-        with createMergeSpec('deobfJar')
-    }
-    dependsOn(compileJava)
-    dependsOn(processResources)
-}
-
-task sourcesJar(type: Jar) {
-    classifier = 'sources'
-    manifest.attributes(attributes)
-    includeEmptyDirs = false
-    duplicatesStrategy = 'WARN'
-
-    from sourceSets.main.allSource
-    afterEvaluate {
-        productionModules.each {
-            dependsOn it.sourcesJar
-        }
-        with createMergeSpec('sourcesJar')
     }
 
-    exclude '**/*.class'
-}
-assemble.dependsOn obfJar, deobfJar, sourcesJar
-
-//endregion
-
-//region Shared publish configuration
-
-configure(productionModules + [project]) {
-    components.java
-
-    artifacts {
-        archives obfJar, deobfJar, sourcesJar
+    task sourcesJar(type: Jar, dependsOn: classes) {
+        archiveClassifier = "sources"
+        from sourceSets.main.allSource
     }
-
-    // For some reason we need to apply the publish plugin at the last moment, otherwise there are odd issues with it
-    // already being configured
-    apply plugin: 'maven-publish'
-    publishing {
-        publications {
-            create("mod", MavenPublication) {
-                from components.java
-                artifacts = [obfJar, deobfJar, sourcesJar]
-                pom {
-                    // `.toString()` immediately evaluates the `GString` to a `String`, which is apparently necessary
-                    // for the maven-publish plugin
-                    name = project == rootProject ? "LibrarianLib" : "LibrarianLib $human_name".toString()
-                    description = project == rootProject ? "The final packaged LibrarianLib jar" : "$module_description".toString()
-                    url = 'http://github.com/LibrarianLib/LibrarianLib'
-                    if(project == rootProject) {
-                        artifactId = "librarianlib"
-                    } else {
-                        artifactId = "librarianlib-" + project.name
-                    }
-                    licenses {
-                        license {
-                            name = 'GNU Lesser General Public License v3'
-                            url = 'https://www.gnu.org/licenses/lgpl-3.0.txt'
-                        }
-                    }
-                    scm {
-                        connection = 'scm:git:https://github.com/LibrarianLib/LibrarianLib.git'
-                        developerConnection = 'scm:git:ssh://github.com/LibrarianLib/LibrarianLib.git'
-                        url = 'https://github.com/LibrarianLib/LibrarianLib'
-                    }
-                    // Remove the forge dependencies from the POM
-                    withXml {
-                        def node = asNode()
-                        node.dependencies.'*'.findAll {
-                            it.groupId.text() == 'net.minecraftforge'
-                        }.each {
-                            it.parent().remove(it)
-                        }
-                    }
-                }
-            }
-        }
-        repositories {
-        }
-    }
-
-    apply plugin: 'com.jfrog.bintray'
-
-    bintray {
-        user = System.getenv("BINTRAY_USER")
-        key = System.getenv("BINTRAY_API_KEY")
-        publications = ["mod"]
-        pkg {
-            repo = "teamwizardry"
-            userOrg = "teamwizardry"
-
-            if(project != rootProject)
-                name = "librarianlib-" + project.name
-            else
-                name = project.name
-            desc = project.description
-            labels = ["minecraft", "mc", "mod", "modding", "forge", "library", "wizardry"]
-            licenses = ["LGPL-3.0"]
-
-            websiteUrl = "https://github.com/TeamWizardry/LibrarianLib"
-            githubRepo = "TeamWizardry/LibrarianLib"
-            vcsUrl = "https://github.com/TeamWizardry/LibrarianLib.git"
-            issueTrackerUrl = "https://github.com/TeamWizardry/LibrarianLib/issues"
-
-        }
-    }
-
-    apply plugin: 'com.jfrog.artifactory'
-}
-
-artifactory {
-    setContextUrl 'https://oss.jfrog.org'
-    publish {
-        repository {
-            repoKey = project.version.endsWith("-SNAPSHOT") ? "oss-snapshot-local" : "oss-release-local"
-            username = System.getenv("BINTRAY_USER")
-            password = System.getenv("BINTRAY_API_KEY")
-            maven = true
-        }
-        defaults {
-            publications "mod"
-        }
-    }
-    clientConfig.info.setBuildNumber(System.getenv('ARTIFACTORY_BUILD_NUMBER')) // no env = null -> default value
-}
-//endregion
-
-// =====================================================================================================================
-// Utilities
-// =====================================================================================================================
-
-/**
- * Update the MC/Forge/MCP version shields in the README. I know those won't get updated, you know those won't get
- * updated, so I'm making it automatic.
- */
-task(updateReadmeVersions).doLast {
-    def readmeText = file('README.md').text
-    def readme = readmeText
-    readme = shield(readme, 'mc-version-shield', 'Minecraft', mc_version, 'blue', "Minecraft $mc_version")
-    readme = shield(readme, 'forge-version-shield', 'Forge', forge_version, 'blue', "Minecraft Forge $forge_version")
-    def mcp = "${mc_mappings_channel}_${mc_mappings_version}"
-    readme = shield(readme, 'mcp-mappings-shield', 'MCP', mcp, 'blue', "MCP $mcp")
-    if(readme != readmeText) {
-        file('README.md').text = readme
-    }
-}
-assemble.dependsOn(updateReadmeVersions)
-
-private static String shield(String readme, String id, String label, String message, String color, String alt) {
-    def cleanLabel = label.replaceAll('_', '__').replaceAll('-', '--').replaceAll(' ', '_')
-    def cleanMessage = message.replaceAll('_', '__').replaceAll('-', '--').replaceAll(' ', '_')
-    return readme.replaceFirst(
-            ~/<img id="$id"[^>]+\/>/,
-            "<img id=\"$id\" src=\"https://img.shields.io/badge/$cleanLabel-$cleanMessage-$color\" alt=\"$alt\"/>"
-    )
 }

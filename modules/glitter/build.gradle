@@ -1,6 +1,6 @@
 dependencies {
-    api project(":core")
-    api project(":etcetera")
-    testApi project(":testbase")
-    shade "org.magicwerk:brownies-collections:0.9.13"
+    modImplementation project(":core")
+    modImplementation project(":etcetera")
+    testmodImplementation() project(":testbase")
+    include "org.magicwerk:brownies-collections:0.9.13"
 }

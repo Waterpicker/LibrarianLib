@@ -1,6 +1,6 @@
 dependencies {
-    api project(":core")
-    api project(":prism")
-    testApi project(":testbase")
-    testApi project(":prism")
+    modImplementation project(":core")
+    modImplementation project(":prism")
+    testmodImplementation project(":testbase")
+    testmodImplementation project(":prism")
 }

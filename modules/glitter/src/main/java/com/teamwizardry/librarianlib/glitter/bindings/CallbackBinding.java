@@ -1,5 +1,9 @@
 package com.teamwizardry.librarianlib.glitter.bindings;
 
+import net.minecraft.client.shader.Framebuffer;
+
+import net.minecraftforge.fml.network.NetworkEvent;
+
 import com.teamwizardry.librarianlib.glitter.ReadParticleBinding;
 import org.jetbrains.annotations.NotNull;
 
@@ -10,6 +14,8 @@ public class CallbackBinding implements ReadParticleBinding {
     public CallbackBinding(int size, Callback callback) {
         this.contents = new double[size];
         this.callback = callback;
+        Framebuffer f;
+        f.enableStencil();
     }
 
     @NotNull

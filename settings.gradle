@@ -1,3 +1,15 @@
+pluginManagement {
+    repositories {
+        jcenter()
+        gradlePluginPortal()
+        maven {
+            name = 'Fabric'
+            url = 'https://maven.fabricmc.net/'
+        }
+        mavenLocal()
+    }
+}
+
 rootProject.name = "librarianlib"
 
 def includeModule(String name) {
@@ -5,7 +17,6 @@ def includeModule(String name) {
     project(":$name").projectDir = new File(rootDir.path + "/modules/" + name)
 }
 
-include("runtime")
 includeModule("core")
 includeModule("courier")
 includeModule("etcetera")

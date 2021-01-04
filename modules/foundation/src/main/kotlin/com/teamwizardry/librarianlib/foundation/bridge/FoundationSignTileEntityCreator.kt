@@ -3,6 +3,7 @@ package com.teamwizardry.librarianlib.foundation.bridge
 import com.teamwizardry.librarianlib.core.util.kotlin.threadLocal
 import net.minecraft.tileentity.SignTileEntity
 import net.minecraft.tileentity.TileEntityType
+import net.minecraftforge.fml.network.PacketDistributor
 import java.lang.IllegalStateException
 
 /**
@@ -31,6 +32,7 @@ public object FoundationSignTileEntityCreator {
             return te
         } finally {
             tileEntityTypeOverride = null
+            PacketDistributor
         }
     }
 
