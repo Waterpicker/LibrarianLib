@@ -1,22 +1,12 @@
 package com.teamwizardry.librarianlib.math
 
 import com.teamwizardry.librarianlib.core.bridge.IMatrix4f
+import com.teamwizardry.librarianlib.core.util.kotlin.mixinCast
 import com.teamwizardry.librarianlib.core.util.kotlin.threadLocal
 import com.teamwizardry.librarianlib.core.util.vec
-import dev.thecodewarrior.mirror.Mirror
-import dev.thecodewarrior.mirror.member.FieldMirror
-import net.minecraft.client.renderer.Matrix3f
-import net.minecraft.client.renderer.Matrix4f
+import net.minecraft.util.math.Matrix4f
 import net.minecraft.util.math.Vec3d
-import kotlin.math.PI
-import kotlin.math.pow
-import kotlin.math.abs
-import kotlin.math.floor
-import kotlin.math.ceil
-import kotlin.math.cos
-import kotlin.math.roundToLong
-import kotlin.math.sin
-import kotlin.math.tan
+import kotlin.math.*
 
 // adapted from flow/math: https://github.com/flow/math
 public open class Matrix4d(
@@ -436,12 +426,26 @@ public open class Matrix4d(
     }
 
     public fun toMatrix4f(): Matrix4f {
-        return Matrix4f(floatArrayOf(
-            m00.toFloat(), m01.toFloat(), m02.toFloat(), m03.toFloat(),
-            m10.toFloat(), m11.toFloat(), m12.toFloat(), m13.toFloat(),
-            m20.toFloat(), m21.toFloat(), m22.toFloat(), m23.toFloat(),
-            m30.toFloat(), m31.toFloat(), m32.toFloat(), m33.toFloat()
-        ))
+        val matrix = Matrix4f()
+        val mixin = mixinCast<IMatrix4f>(matrix)
+        mixin.m00 = m00.toFloat()
+        mixin.m01 = m01.toFloat()
+        mixin.m02 = m02.toFloat()
+        mixin.m03 = m03.toFloat()
+        mixin.m10 = m10.toFloat()
+        mixin.m11 = m11.toFloat()
+        mixin.m12 = m12.toFloat()
+        mixin.m13 = m13.toFloat()
+        mixin.m20 = m20.toFloat()
+        mixin.m21 = m21.toFloat()
+        mixin.m22 = m22.toFloat()
+        mixin.m23 = m23.toFloat()
+        mixin.m30 = m30.toFloat()
+        mixin.m31 = m31.toFloat()
+        mixin.m32 = m32.toFloat()
+        mixin.m33 = m33.toFloat()
+
+        return matrix
     }
 
     override fun toString(): String {

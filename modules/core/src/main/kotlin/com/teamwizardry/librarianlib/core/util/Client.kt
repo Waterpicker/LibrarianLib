@@ -1,56 +1,46 @@
 package com.teamwizardry.librarianlib.core.util
 
-import com.google.common.collect.Lists
-import com.teamwizardry.librarianlib.core.logger
 import com.teamwizardry.librarianlib.math.Vec2d
-import com.teamwizardry.librarianlib.core.util.vec
 import dev.thecodewarrior.mirror.Mirror
-import net.minecraft.client.MainWindow
-import net.minecraft.client.Minecraft
-import net.minecraft.client.entity.player.ClientPlayerEntity
-import net.minecraft.client.gui.FontRenderer
+import net.minecraft.client.MinecraftClient
+import net.minecraft.client.font.TextRenderer
 import net.minecraft.client.gui.screen.Screen
-import net.minecraft.client.renderer.Tessellator
-import net.minecraft.client.renderer.texture.AtlasTexture
-import net.minecraft.client.renderer.texture.TextureAtlasSprite
-import net.minecraft.client.renderer.texture.TextureManager
-import net.minecraft.resources.IFutureReloadListener
-import net.minecraft.resources.IReloadableResourceManager
-import net.minecraft.resources.IResourceManager
-import net.minecraft.util.ResourceLocation
-import net.minecraft.util.Timer
+import net.minecraft.client.network.ClientPlayerEntity
+import net.minecraft.client.render.RenderTickCounter
+import net.minecraft.client.render.Tessellator
+import net.minecraft.client.texture.Sprite
+import net.minecraft.client.texture.SpriteAtlasTexture
+import net.minecraft.client.texture.TextureManager
+import net.minecraft.client.util.Window
+import net.minecraft.resource.ResourceManager
+import net.minecraft.util.Identifier
 import net.minecraft.util.math.Vec3d
-import net.minecraftforge.api.distmarker.Dist
-import net.minecraftforge.api.distmarker.OnlyIn
 import net.minecraftforge.common.MinecraftForge
-import net.minecraftforge.eventbus.api.SubscribeEvent
 import net.minecraftforge.event.TickEvent
-import net.minecraftforge.resource.IResourceType
-import net.minecraftforge.resource.ISelectiveResourceReloadListener
-import net.minecraftforge.resource.SelectiveReloadStateHandler
+import net.minecraftforge.eventbus.api.SubscribeEvent
 import java.io.IOException
 import java.io.InputStream
 import java.util.concurrent.CompletableFuture
 
 public object Client {
     @JvmStatic
-    public val minecraft: Minecraft
-        get() = Minecraft.getInstance()
+    public val minecraft: MinecraftClient
+        get() = MinecraftClient.getInstance()
 
     @JvmStatic
     public val player: ClientPlayerEntity?
         get() = minecraft.player
 
     @JvmStatic
-    public val window: MainWindow
-        get() = minecraft.mainWindow
+    public val window: Window
+        get() = minecraft.window
 
     @JvmStatic
     public val guiScaleFactor: Double
-        get() = window.guiScaleFactor
+        get() = window.scaleFactor
 
     @JvmStatic
-    public val resourceManager: IResourceManager
+    public val resourceManager: ResourceManager
         get() = minecraft.resourceManager
 
     @JvmStatic
@@ -58,8 +48,8 @@ public object Client {
         get() = minecraft.textureManager
 
     @JvmStatic
-    public val fontRenderer: FontRenderer
-        get() = minecraft.fontRenderer
+    public val fontRenderer: TextRenderer
+        get() = minecraft.textRenderer
 
     @JvmStatic
     public val tessellator: Tessellator
@@ -84,7 +74,7 @@ public object Client {
         override val ticks: Int
             get() = globalTicks
         override val partialTicks: Float
-            get() = timer.renderPartialTicks
+            get() = timer.tickDelta
     }
 
     /**
@@ -95,10 +85,10 @@ public object Client {
         override val ticks: Int
             get() = worldTicks
         override val partialTicks: Float
-            get() = if (minecraft.isGamePaused)
+            get() = if (minecraft.isPaused)
                 renderPartialTicksPaused.get(minecraft) as Float
             else
-                timer.renderPartialTicks
+                timer.tickDelta
     }
 
     @JvmStatic
@@ -106,7 +96,7 @@ public object Client {
 
     @JvmStatic
     public fun displayGuiScreen(screen: Screen?) {
-        minecraft.displayGuiScreen(screen)
+        minecraft.openScreen(screen)
     }
 
     /**
@@ -115,18 +105,18 @@ public object Client {
      */
     @JvmStatic
     public fun runAsync(task: Runnable): CompletableFuture<Void> {
-        return minecraft.runAsync(task)
+        return minecraft.submit(task)
     }
 
     @JvmStatic
-    public fun getBlockAtlasSprite(sprite: ResourceLocation): TextureAtlasSprite {
+    public fun getBlockAtlasSprite(sprite: Identifier): Sprite {
         @Suppress("DEPRECATION")
-        return getAtlasSprite(AtlasTexture.LOCATION_BLOCKS_TEXTURE, sprite)
+        return getAtlasSprite(SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE, sprite)
     }
 
     @JvmStatic
-    public fun getAtlasSprite(atlas: ResourceLocation, texture: ResourceLocation): TextureAtlasSprite {
-        return minecraft.getAtlasSpriteGetter(atlas).apply(texture)
+    public fun getAtlasSprite(atlas: Identifier, texture: Identifier): Sprite {
+        return minecraft.getSpriteAtlas(atlas).apply(texture)
     }
 
     /**
@@ -136,7 +126,7 @@ public object Client {
      */
     @JvmStatic
     @Throws(IOException::class)
-    public fun getResourceInputStream(resourceManager: IResourceManager, location: ResourceLocation): InputStream {
+    public fun getResourceInputStream(resourceManager: ResourceManager, location: Identifier): InputStream {
         return resourceManager.getResource(location).inputStream
     }
 
@@ -146,7 +136,7 @@ public object Client {
      * @see getResourceInputStream
      */
     @JvmStatic
-    public fun getResourceInputStreamOrNull(resourceManager: IResourceManager, location: ResourceLocation): InputStream? {
+    public fun getResourceInputStreamOrNull(resourceManager: ResourceManager, location: Identifier): InputStream? {
         return try {
             getResourceInputStream(resourceManager, location)
         } catch (e: IOException) {
@@ -161,7 +151,7 @@ public object Client {
      */
     @JvmStatic
     @Throws(IOException::class)
-    public fun getResourceBytes(resourceManager: IResourceManager, location: ResourceLocation): ByteArray {
+    public fun getResourceBytes(resourceManager: ResourceManager, location: Identifier): ByteArray {
         return resourceManager.getResource(location).inputStream.use { it.readBytes() }
     }
 
@@ -171,7 +161,7 @@ public object Client {
      * @see getResourceBytes
      */
     @JvmStatic
-    public fun getResourceBytesOrNull(resourceManager: IResourceManager, location: ResourceLocation): ByteArray? {
+    public fun getResourceBytesOrNull(resourceManager: ResourceManager, location: Identifier): ByteArray? {
         return try {
             getResourceBytes(resourceManager, location)
         } catch (e: IOException) {
@@ -186,7 +176,7 @@ public object Client {
      */
     @JvmStatic
     @Throws(IOException::class)
-    public fun getResourceText(resourceManager: IResourceManager, location: ResourceLocation): String {
+    public fun getResourceText(resourceManager: ResourceManager, location: Identifier): String {
         return resourceManager.getResource(location).inputStream.bufferedReader().use { it.readText() }
     }
 
@@ -196,7 +186,7 @@ public object Client {
      * @see getResourceText
      */
     @JvmStatic
-    public fun getResourceTextOrNull(resourceManager: IResourceManager, location: ResourceLocation): String? {
+    public fun getResourceTextOrNull(resourceManager: ResourceManager, location: Identifier): String? {
         return try {
             getResourceText(resourceManager, location)
         } catch (e: IOException) {
@@ -211,7 +201,7 @@ public object Client {
      */
     @JvmStatic
     @Throws(IOException::class)
-    public fun getResourceInputStream(location: ResourceLocation): InputStream {
+    public fun getResourceInputStream(location: Identifier): InputStream {
         return getResourceInputStream(resourceManager, location)
     }
 
@@ -221,7 +211,7 @@ public object Client {
      * @see getResourceInputStream
      */
     @JvmStatic
-    public fun getResourceInputStreamOrNull(location: ResourceLocation): InputStream? {
+    public fun getResourceInputStreamOrNull(location: Identifier): InputStream? {
         return getResourceInputStreamOrNull(resourceManager, location)
     }
 
@@ -232,7 +222,7 @@ public object Client {
      */
     @JvmStatic
     @Throws(IOException::class)
-    public fun getResourceBytes(location: ResourceLocation): ByteArray {
+    public fun getResourceBytes(location: Identifier): ByteArray {
         return getResourceBytes(resourceManager, location)
     }
 
@@ -242,7 +232,7 @@ public object Client {
      * @see getResourceBytes
      */
     @JvmStatic
-    public fun getResourceBytesOrNull(location: ResourceLocation): ByteArray? {
+    public fun getResourceBytesOrNull(location: Identifier): ByteArray? {
         return getResourceBytesOrNull(resourceManager, location)
     }
 
@@ -253,7 +243,7 @@ public object Client {
      */
     @JvmStatic
     @Throws(IOException::class)
-    public fun getResourceText(location: ResourceLocation): String {
+    public fun getResourceText(location: Identifier): String {
         return getResourceText(resourceManager, location)
     }
 
@@ -263,7 +253,7 @@ public object Client {
      * @see getResourceText
      */
     @JvmStatic
-    public fun getResourceTextOrNull(location: ResourceLocation): String? {
+    public fun getResourceTextOrNull(location: Identifier): String? {
         return getResourceTextOrNull(resourceManager, location)
     }
 
@@ -289,12 +279,12 @@ public object Client {
         }
     }
 
-    private val timer: Timer = if(isDataGen)
-        Timer(50f, 0)
+    private val timer: RenderTickCounter = if(isDataGen)
+        RenderTickCounter(50f, 0)
     else
-        Mirror.reflectClass<Minecraft>().getField(mapSrgName("field_71428_T")).get(minecraft)
+        Mirror.reflectClass<MinecraftClient>().getField(mapSrgName("field_71428_T")).get(minecraft)
 
-    private val renderPartialTicksPaused = Mirror.reflectClass<Minecraft>().getField(mapSrgName("field_193996_ah"))
+    private val renderPartialTicksPaused = Mirror.reflectClass<MinecraftClient>().getField(mapSrgName("field_193996_ah"))
 
     private var worldTicks: Int = 0
     private var globalTicks: Int = 0
@@ -307,8 +297,8 @@ public object Client {
     @SubscribeEvent
     internal fun clientTickEnd(event: TickEvent.ClientTickEvent) {
         if (event.phase == TickEvent.Phase.END) {
-            val mc = Minecraft.getInstance()
-            if (!mc.isGamePaused)
+            val mc = MinecraftClient.getInstance()
+            if (!mc.isPaused)
                 worldTicks += timer.elapsedTicks
             globalTicks += timer.elapsedTicks
         }

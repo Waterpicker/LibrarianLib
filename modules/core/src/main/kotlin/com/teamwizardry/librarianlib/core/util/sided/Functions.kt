@@ -1,9 +1,9 @@
 package com.teamwizardry.librarianlib.core.util.sided
 
 import com.teamwizardry.librarianlib.core.util.kotlin.inconceivable
-import net.minecraftforge.api.distmarker.Dist
-import net.minecraftforge.api.distmarker.OnlyIn
-import net.minecraftforge.fml.loading.FMLEnvironment
+import net.fabricmc.api.EnvType
+import net.fabricmc.api.Environment
+import net.fabricmc.loader.api.FabricLoader
 import java.util.function.Function
 
 /**
@@ -11,17 +11,17 @@ import java.util.function.Function
  */
 public interface SidedFunction<T, R>: Function<T, R> {
     override fun apply(t: T): R {
-        return when (FMLEnvironment.dist) {
-            Dist.CLIENT -> applyClient(t)
-            Dist.DEDICATED_SERVER -> applyServer(t)
+        return when (FabricLoader.getInstance().environmentType) {
+            EnvType.CLIENT -> applyClient(t)
+            EnvType.SERVER -> applyServer(t)
             null -> inconceivable("No dist")
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     public fun applyClient(t: T): R
 
-    @OnlyIn(Dist.DEDICATED_SERVER)
+    @Environment(EnvType.SERVER)
     public fun applyServer(t: T): R
 
     public companion object {
@@ -59,14 +59,14 @@ public interface SidedFunction<T, R>: Function<T, R> {
  */
 public fun interface ClientFunction<T, R>: Function<T, R?> {
     override fun apply(t: T): R? {
-        return if (FMLEnvironment.dist.isClient) {
+        return if (FabricLoader.getInstance().environmentType == EnvType.CLIENT) {
             applyClient(t)
         } else {
             null
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     public fun applyClient(t: T): R
 }
 
@@ -75,13 +75,13 @@ public fun interface ClientFunction<T, R>: Function<T, R?> {
  */
 public fun interface ServerFunction<T, R>: Function<T, R?> {
     override fun apply(t: T): R? {
-        return if (FMLEnvironment.dist.isDedicatedServer) {
+        return if (FabricLoader.getInstance().environmentType == EnvType.SERVER) {
             applyServer(t)
         } else {
             null
         }
     }
 
-    @OnlyIn(Dist.DEDICATED_SERVER)
+    @Environment(EnvType.SERVER)
     public fun applyServer(t: T): R
 }

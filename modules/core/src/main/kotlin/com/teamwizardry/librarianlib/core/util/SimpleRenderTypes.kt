@@ -2,20 +2,20 @@ package com.teamwizardry.librarianlib.core.util
 
 import com.teamwizardry.librarianlib.core.bridge.IMutableRenderTypeState
 import com.teamwizardry.librarianlib.core.util.kotlin.mixinCast
-import net.minecraft.client.renderer.RenderState
-import net.minecraft.client.renderer.RenderType
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats
-import net.minecraft.client.renderer.vertex.VertexFormat
-import net.minecraft.util.ResourceLocation
+import net.minecraft.client.render.RenderLayer
+import net.minecraft.client.render.RenderPhase
+import net.minecraft.client.render.VertexFormat
+import net.minecraft.client.render.VertexFormats
+import net.minecraft.util.Identifier
 import org.lwjgl.opengl.GL11
 import java.util.function.Consumer
 
 public object SimpleRenderTypes {
-    private val flatColorCache = mutableMapOf<Int, RenderType>()
-    private val flatTextureCache = mutableMapOf<Pair<ResourceLocation, Int>, RenderType>()
+    private val flatColorCache = mutableMapOf<Int, RenderLayer>()
+    private val flatTextureCache = mutableMapOf<Pair<Identifier, Int>, RenderLayer>()
 
     /**
-     * Simple flat polygons using the [POSITION_COLOR_TEX][DefaultVertexFormats.POSITION_COLOR_TEX] format.
+     * Simple flat polygons using the [POSITION_COLOR_TEXTURE][VertexFormats.POSITION_COLOR_TEXTURE] format.
      *
      * This value should be reused, not generated every frame.
      *
@@ -27,10 +27,10 @@ public object SimpleRenderTypes {
     @JvmOverloads
     @JvmStatic
     public fun flat(
-        texture: ResourceLocation,
+        texture: Identifier,
         glMode: Int = GL11.GL_QUADS,
-        configure: Consumer<RenderType.State.Builder>? = null
-    ): RenderType {
+        configure: Consumer<RenderLayer.MultiPhaseParameters.Builder>? = null
+    ): RenderLayer {
         if (configure != null)
             return makeFlat(texture, glMode, configure)
         return flatTextureCache.getOrPut(texture to glMode) {
@@ -39,12 +39,12 @@ public object SimpleRenderTypes {
     }
 
     private fun makeFlat(
-        texture: ResourceLocation,
+        texture: Identifier,
         glMode: Int = GL11.GL_QUADS,
-        configure: Consumer<RenderType.State.Builder>? = null
-    ): RenderType {
-        val renderState = RenderType.State.getBuilder()
-            .texture(RenderState.TextureState(texture, false, false))
+        configure: Consumer<RenderLayer.MultiPhaseParameters.Builder>? = null
+    ): RenderLayer {
+        val renderState = RenderLayer.MultiPhaseParameters.builder()
+            .texture(RenderPhase.Texture(texture, false, false))
             .alpha(DefaultRenderStates.DEFAULT_ALPHA)
             .depthTest(DefaultRenderStates.DEPTH_LEQUAL)
             .transparency(DefaultRenderStates.TRANSLUCENT_TRANSPARENCY)
@@ -52,12 +52,12 @@ public object SimpleRenderTypes {
 
         return makeType(
             "flat_texture",
-            DefaultVertexFormats.POSITION_COLOR_TEX, glMode, 256, false, false, renderState.build(true)
+            VertexFormats.POSITION_COLOR_TEXTURE, glMode, 256, false, false, renderState.build(true)
         )
     }
 
     /**
-     * Simple flat polygons using the [POSITION_COLOR][DefaultVertexFormats.POSITION_COLOR] format.
+     * Simple flat polygons using the [POSITION_COLOR][VertexFormats.POSITION_COLOR] format.
      *
      * This value should be reused, not generated every frame.
      *
@@ -67,7 +67,7 @@ public object SimpleRenderTypes {
      */
     @JvmOverloads
     @JvmStatic
-    public fun flat(glMode: Int, configure: Consumer<RenderType.State.Builder>? = null): RenderType {
+    public fun flat(glMode: Int, configure: Consumer<RenderLayer.MultiPhaseParameters.Builder>? = null): RenderLayer {
         if (configure != null)
             return makeFlat(glMode, configure)
         return flatColorCache.getOrPut(glMode) {
@@ -75,9 +75,9 @@ public object SimpleRenderTypes {
         }
     }
 
-    private fun makeFlat(glMode: Int, configure: Consumer<RenderType.State.Builder>? = null): RenderType {
-        val renderState = RenderType.State.getBuilder()
-            .texture(RenderState.TextureState())
+    private fun makeFlat(glMode: Int, configure: Consumer<RenderLayer.MultiPhaseParameters.Builder>? = null): RenderLayer {
+        val renderState = RenderLayer.MultiPhaseParameters.builder()
+            .texture(RenderPhase.Texture())
             .alpha(DefaultRenderStates.DEFAULT_ALPHA)
             .depthTest(DefaultRenderStates.DEPTH_LEQUAL)
             .transparency(DefaultRenderStates.TRANSLUCENT_TRANSPARENCY)
@@ -86,7 +86,7 @@ public object SimpleRenderTypes {
 
         return makeType(
             "flat_color",
-            DefaultVertexFormats.POSITION_COLOR, glMode, 256, false, false, renderState.build(true)
+            VertexFormats.POSITION_COLOR, glMode, 256, false, false, renderState.build(true)
         )
     }
 
@@ -99,18 +99,18 @@ public object SimpleRenderTypes {
      */
     @JvmStatic
     public fun makeType(
-        name: String,
-        vertexFormatIn: VertexFormat, glMode: Int,
-        bufferSizeIn: Int, useDelegate: Boolean, needsSorting: Boolean,
-        renderState: RenderType.State
-    ): RenderType {
-        mixinCast<IMutableRenderTypeState>(renderState).addState(
+            name: String,
+            vertexFormatIn: VertexFormat, glMode: Int,
+            bufferSizeIn: Int, useDelegate: Boolean, needsSorting: Boolean,
+            renderState: RenderLayer.MultiPhaseParameters
+    ): RenderLayer {
+        mixinCast<IMutableRenderTypeState>(renderState).addPhase(
             CacheFixerRenderState(
                 vertexFormatIn, glMode, bufferSizeIn, useDelegate, needsSorting
             )
         )
         @Suppress("INACCESSIBLE_TYPE")
-        return RenderType.makeType(
+        return RenderLayer.of(
             name,
             vertexFormatIn,
             glMode,
@@ -125,19 +125,19 @@ public object SimpleRenderTypes {
      * Flat colored quads
      */
     @JvmStatic
-    public val flatQuads: RenderType = flat(GL11.GL_QUADS)
+    public val flatQuads: RenderLayer = flat(GL11.GL_QUADS)
 
     /**
      * Flat colored lines
      */
     @JvmStatic
-    public val flatLines: RenderType = flat(GL11.GL_LINES)
+    public val flatLines: RenderLayer = flat(GL11.GL_LINES)
 
     /**
      * Flat colored line strip
      */
     @JvmStatic
-    public val flatLineStrip: RenderType = flat(GL11.GL_LINE_STRIP)
+    public val flatLineStrip: RenderLayer = flat(GL11.GL_LINE_STRIP)
 
     /**
      * Note: We add a custom identity-hashed/equals render state because MC's render type caching is idiotic.
@@ -164,5 +164,5 @@ public object SimpleRenderTypes {
         val bufferSizeIn: Int,
         val useDelegate: Boolean,
         val needsSorting: Boolean
-    ): RenderState("cache_fixer", {}, {})
+    ): RenderPhase("cache_fixer", {}, {})
 }

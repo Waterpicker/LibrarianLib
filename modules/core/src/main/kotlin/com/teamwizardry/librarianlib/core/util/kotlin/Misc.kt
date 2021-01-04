@@ -1,6 +1,7 @@
 @file:JvmName("MiscUtils")
 package com.teamwizardry.librarianlib.core.util.kotlin
 
+import net.minecraft.util.Identifier
 import net.minecraft.util.ResourceLocation
 import net.minecraftforge.common.util.LazyOptional
 import java.util.Optional
@@ -8,7 +9,7 @@ import java.util.Optional
 /**
  * Creates a translation key in the format `type.namespace.path[.suffix]`, e.g. `item.minecraft.iron_ingot`
  */
-public fun ResourceLocation.translationKey(type: String, suffix: String? = null): String
+public fun Identifier.translationKey(type: String, suffix: String? = null): String
     = "$type.$namespace.$path${suffix?.let { ".$it" } ?: ""}"
 
 /**

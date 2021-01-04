@@ -1,13 +1,14 @@
 package com.teamwizardry.librarianlib.core.bridge;
 
 import com.google.common.collect.ImmutableList;
-import net.minecraft.client.renderer.RenderState;
+
+import net.minecraft.client.render.RenderPhase;
 
 public interface IMutableRenderTypeState {
-    void addState(RenderState state);
-    default void addState(String name, Runnable setupTask, Runnable clearTask) {
-        this.addState(new RenderState(name, setupTask, clearTask) {});
+    void addPhase(RenderPhase state);
+    default void addPhase(String name, Runnable setupTask, Runnable clearTask) {
+        this.addPhase(new RenderPhase(name, setupTask, clearTask) {});
     }
-    ImmutableList<RenderState> getRenderStates();
-    void setRenderStates(ImmutableList<RenderState> renderStates);
+    ImmutableList<RenderPhase> getPhases();
+    void setPhases(ImmutableList<RenderPhase> renderStates);
 }

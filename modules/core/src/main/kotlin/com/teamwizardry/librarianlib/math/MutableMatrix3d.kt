@@ -2,13 +2,9 @@ package com.teamwizardry.librarianlib.math
 
 import com.teamwizardry.librarianlib.core.bridge.IMatrix3f
 import com.teamwizardry.librarianlib.core.util.kotlin.threadLocal
-import net.minecraft.client.renderer.Matrix3f
+import net.minecraft.util.math.Matrix3f
 import net.minecraft.util.math.Vec3d
-import kotlin.math.abs
-import kotlin.math.ceil
-import kotlin.math.floor
-import kotlin.math.pow
-import kotlin.math.round
+import kotlin.math.*
 
 // adapted from flow/math: https://github.com/flow/math
 public open class MutableMatrix3d(

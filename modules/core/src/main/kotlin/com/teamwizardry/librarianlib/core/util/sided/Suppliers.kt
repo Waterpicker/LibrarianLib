@@ -1,9 +1,9 @@
 package com.teamwizardry.librarianlib.core.util.sided
 
 import com.teamwizardry.librarianlib.core.util.kotlin.inconceivable
-import net.minecraftforge.api.distmarker.Dist
-import net.minecraftforge.api.distmarker.OnlyIn
-import net.minecraftforge.fml.loading.FMLEnvironment
+import net.fabricmc.api.EnvType
+import net.fabricmc.api.Environment
+import net.fabricmc.loader.api.FabricLoader
 import java.util.function.Supplier
 
 /**
@@ -11,17 +11,17 @@ import java.util.function.Supplier
  */
 public interface SidedSupplier<T>: Supplier<T> {
     override fun get(): T {
-        return when (FMLEnvironment.dist) {
-            Dist.CLIENT -> getClient()
-            Dist.DEDICATED_SERVER -> getServer()
+        return when (FabricLoader.getInstance().environmentType) {
+            EnvType.CLIENT -> getClient()
+            EnvType.SERVER -> getServer()
             null -> inconceivable("No dist")
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     public fun getClient(): T
 
-    @OnlyIn(Dist.DEDICATED_SERVER)
+    @Environment(EnvType.SERVER)
     public fun getServer(): T
 
     public companion object {
@@ -64,14 +64,14 @@ public interface SidedSupplier<T>: Supplier<T> {
  */
 public fun interface ClientSupplier<T>: Supplier<T?> {
     override fun get(): T? {
-        return if (FMLEnvironment.dist.isClient) {
+        return if (FabricLoader.getInstance().environmentType == EnvType.CLIENT) {
             getClient()
         } else {
             null
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     public fun getClient(): T
 }
 
@@ -80,13 +80,13 @@ public fun interface ClientSupplier<T>: Supplier<T?> {
  */
 public fun interface ServerSupplier<T>: Supplier<T?> {
     override fun get(): T? {
-        return if (FMLEnvironment.dist.isDedicatedServer) {
+        return if (FabricLoader.getInstance().environmentType == EnvType.SERVER) {
             getServer()
         } else {
             null
         }
     }
 
-    @OnlyIn(Dist.DEDICATED_SERVER)
+    @Environment(EnvType.SERVER)
     public fun getServer(): T
 }

@@ -12,7 +12,7 @@ package com.teamwizardry.librarianlib.core.util
 import com.teamwizardry.librarianlib.math.Rect2d
 import com.teamwizardry.librarianlib.math.Vec2d
 import com.teamwizardry.librarianlib.math.Vec2i
-import net.minecraft.util.ResourceLocation
+import net.minecraft.util.Identifier
 import net.minecraft.util.math.BlockPos
 import net.minecraft.util.math.Vec3d
 import net.minecraft.util.math.Vec3i
@@ -20,12 +20,12 @@ import net.minecraft.util.math.Vec3i
 /**
 * Shorthand for `new ResourceLocation(location)`
 */
-public fun loc(location: String): ResourceLocation = ResourceLocation(location)
+public fun loc(location: String): Identifier = Identifier(location)
 
 /**
 * Shorthand for `new ResourceLocation(namespace, path)`
 */
-public fun loc(namespace: String, path: String): ResourceLocation = ResourceLocation(namespace, path)
+public fun loc(namespace: String, path: String): Identifier = Identifier(namespace, path)
 
 // Vec2d:
 

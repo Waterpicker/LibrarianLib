@@ -1,27 +1,26 @@
 package com.teamwizardry.librarianlib.core.util.sided
 
 import com.teamwizardry.librarianlib.core.util.kotlin.inconceivable
-import net.minecraftforge.api.distmarker.Dist
-import net.minecraftforge.api.distmarker.OnlyIn
-import net.minecraftforge.fml.loading.FMLEnvironment
-import java.util.function.Consumer
+import net.fabricmc.api.EnvType
+import net.fabricmc.api.Environment
+import net.fabricmc.loader.api.FabricLoader
 
 /**
  * A runnable that will run different blocks of code on the client and server.
  */
 public interface SidedRunnable: Runnable {
     override fun run() {
-        when (FMLEnvironment.dist) {
-            Dist.CLIENT -> runClient()
-            Dist.DEDICATED_SERVER -> runServer()
+        when (FabricLoader.getInstance().environmentType) {
+            EnvType.CLIENT -> runClient()
+            EnvType.SERVER -> runServer()
             null -> inconceivable("No dist")
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     public fun runClient()
 
-    @OnlyIn(Dist.DEDICATED_SERVER)
+    @Environment(EnvType.SERVER)
     public fun runServer()
 
     public companion object {
@@ -64,12 +63,12 @@ public interface SidedRunnable: Runnable {
  */
 public fun interface ClientRunnable: Runnable {
     override fun run() {
-        if (FMLEnvironment.dist.isClient) {
+        if (FabricLoader.getInstance().environmentType == EnvType.CLIENT) {
             runClient()
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.SERVER)
     public fun runClient()
 }
 
@@ -78,11 +77,11 @@ public fun interface ClientRunnable: Runnable {
  */
 public fun interface ServerRunnable: Runnable {
     override fun run() {
-        if (FMLEnvironment.dist.isDedicatedServer) {
+        if (FabricLoader.getInstance().environmentType == EnvType.SERVER) {
             runServer()
         }
     }
 
-    @OnlyIn(Dist.DEDICATED_SERVER)
+    @Environment(EnvType.SERVER)
     public fun runServer()
 }

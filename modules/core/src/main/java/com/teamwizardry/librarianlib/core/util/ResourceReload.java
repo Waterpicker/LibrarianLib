@@ -1,36 +1,40 @@
 package com.teamwizardry.librarianlib.core.util;
 
 import com.google.common.collect.Lists;
-import com.teamwizardry.librarianlib.core.util.sided.ClientRunnable;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.resources.ReloadListener;
-import net.minecraft.profiler.IProfiler;
-import net.minecraft.resources.IFutureReloadListener;
-import net.minecraft.resources.IReloadableResourceManager;
-import net.minecraft.resources.IResourceManager;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+
+import java.util.List;
+
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.resource.ReloadableResourceManager;
+import net.minecraft.resource.ResourceManager;
+import net.minecraft.resource.ResourceReloadListener;
+import net.minecraft.resource.ResourceType;
+import net.minecraft.resource.SinglePreparationResourceReloadListener;
+import net.minecraft.util.profiler.Profiler;
+
 import net.minecraftforge.resource.IResourceType;
 import net.minecraftforge.resource.ISelectiveResourceReloadListener;
 import net.minecraftforge.resource.SelectiveReloadStateHandler;
 
-import java.util.List;
+import com.teamwizardry.librarianlib.core.util.sided.ClientRunnable;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 
 public class ResourceReload {
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     public boolean isLoading(IResourceType type) {
         return SelectiveReloadStateHandler.INSTANCE.get().test(type);
     }
 
-    public void register(IFutureReloadListener listener) {
-        ((IReloadableResourceManager) Minecraft.getInstance().getResourceManager()).addReloadListener(listener);
+    public void register(ResourceReloadListener listener) {
+        ((ReloadableResourceManager) MinecraftClient.getInstance().getResourceManager()).registerListener(listener);
     }
 
     public <T> void register(ISimpleReloadListener<T> listener) {
         this.register(new SimpleReloadListener<T>(listener));
     }
 
-    public void register(List<IResourceType> types, ClientRunnable runnable) {
+    public void register(List<ResourceType> types, ClientRunnable runnable) {
         ISelectiveResourceReloadListener listener = (resourceManager, resourcePredicate) -> {
             boolean hasMatch = false;
             for (IResourceType type : types) {
@@ -40,14 +44,14 @@ public class ResourceReload {
                 runnable.run();
         };
 
-        ((IReloadableResourceManager) Minecraft.getInstance().getResourceManager()).addReloadListener(listener);
+        ((ReloadableResourceManager) MinecraftClient.getInstance().getResourceManager()).registerListener(listener);
     }
 
-    public void register(IResourceType type, ClientRunnable runnable) {
+    public void register(ResourceType type, ClientRunnable runnable) {
         register(Lists.newArrayList(type), runnable);
     }
 
-    private static class SimpleReloadListener<T> extends ReloadListener<T> {
+    private static class SimpleReloadListener<T> extends SinglePreparationResourceReloadListener<T> {
         private ISimpleReloadListener<T> listener;
 
         public SimpleReloadListener(ISimpleReloadListener<T> listener) {
@@ -55,12 +59,12 @@ public class ResourceReload {
         }
 
         @Override
-        protected T prepare(IResourceManager resourceManagerIn, IProfiler profilerIn) {
+        protected T prepare(ResourceManager resourceManagerIn, Profiler profilerIn) {
             return listener.prepare(resourceManagerIn, profilerIn);
         }
 
         @Override
-        protected void apply(T splashList, IResourceManager resourceManagerIn, IProfiler profilerIn) {
+        protected void apply(T splashList, ResourceManager resourceManagerIn, Profiler profilerIn) {
             listener.apply(splashList, resourceManagerIn, profilerIn);
         }
     }

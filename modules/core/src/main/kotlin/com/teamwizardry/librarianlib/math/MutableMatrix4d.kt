@@ -1,13 +1,9 @@
 package com.teamwizardry.librarianlib.math
 
 import com.teamwizardry.librarianlib.core.bridge.IMatrix4f
-import net.minecraft.client.renderer.Matrix4f
+import net.minecraft.util.math.Matrix4f
 import net.minecraft.util.math.Vec3d
-import kotlin.math.abs
-import kotlin.math.ceil
-import kotlin.math.floor
-import kotlin.math.pow
-import kotlin.math.roundToLong
+import kotlin.math.*
 
 // adapted from flow/math: https://github.com/flow/math
 public open class MutableMatrix4d(

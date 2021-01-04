@@ -1,30 +1,33 @@
 package com.teamwizardry.librarianlib.core.mixin;
 
 import com.google.common.collect.ImmutableList;
-import com.teamwizardry.librarianlib.core.bridge.IMutableRenderTypeState;
-import net.minecraft.client.renderer.RenderState;
-import net.minecraft.client.renderer.RenderType;
-import org.spongepowered.asm.mixin.*;
-import org.spongepowered.asm.mixin.gen.Accessor;
 
 import java.util.ArrayList;
 
-@Mixin(RenderType.State.class)
+import net.minecraft.client.render.RenderLayer;
+import net.minecraft.client.render.RenderPhase;
+
+import com.teamwizardry.librarianlib.core.bridge.IMutableRenderTypeState;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Mutable;
+import org.spongepowered.asm.mixin.gen.Accessor;
+
+@Mixin(RenderLayer.MultiPhaseParameters.class)
 public abstract class RenderTypeStateMixin implements IMutableRenderTypeState {
     @Override
-    public void addState(RenderState state) {
-        ArrayList<RenderState> states = new ArrayList<>(getRenderStates());
+    public void addPhase(RenderPhase state) {
+        ArrayList<RenderPhase> states = new ArrayList<>(getPhases());
         states.add(state);
-        setRenderStates(ImmutableList.copyOf(states));
+        setPhases(ImmutableList.copyOf(states));
     }
 
     @Accessor
     @Mutable
     @Override
-    public abstract ImmutableList<RenderState> getRenderStates();
+    public abstract ImmutableList<RenderPhase> getPhases();
 
     @Accessor
     @Mutable
     @Override
-    public abstract void setRenderStates(ImmutableList<RenderState> renderStates);
+    public abstract void setPhases(ImmutableList<RenderPhase> renderStates);
 }

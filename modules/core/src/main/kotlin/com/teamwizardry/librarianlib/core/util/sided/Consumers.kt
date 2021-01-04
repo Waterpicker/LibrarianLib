@@ -1,9 +1,9 @@
 package com.teamwizardry.librarianlib.core.util.sided
 
 import com.teamwizardry.librarianlib.core.util.kotlin.inconceivable
-import net.minecraftforge.api.distmarker.Dist
-import net.minecraftforge.api.distmarker.OnlyIn
-import net.minecraftforge.fml.loading.FMLEnvironment
+import net.fabricmc.api.EnvType
+import net.fabricmc.api.Environment
+import net.fabricmc.loader.api.FabricLoader
 import java.util.function.Consumer
 
 /**
@@ -11,17 +11,17 @@ import java.util.function.Consumer
  */
 public interface SidedConsumer<T>: Consumer<T> {
     override fun accept(t: T) {
-        when (FMLEnvironment.dist) {
-            Dist.CLIENT -> acceptClient(t)
-            Dist.DEDICATED_SERVER -> acceptServer(t)
+        when (FabricLoader.getInstance().environmentType) {
+            EnvType.CLIENT -> acceptClient(t)
+            EnvType.SERVER -> acceptServer(t)
             null -> inconceivable("No dist")
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     public fun acceptClient(t: T)
 
-    @OnlyIn(Dist.DEDICATED_SERVER)
+    @Environment(EnvType.SERVER)
     public fun acceptServer(t: T)
 
     public companion object {
@@ -64,12 +64,12 @@ public interface SidedConsumer<T>: Consumer<T> {
  */
 public fun interface ClientConsumer<T>: Consumer<T> {
     override fun accept(t: T) {
-        if (FMLEnvironment.dist.isClient) {
+        if (FabricLoader.getInstance().environmentType == EnvType.CLIENT) {
             acceptClient(t)
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     public fun acceptClient(t: T)
 }
 
@@ -78,11 +78,11 @@ public fun interface ClientConsumer<T>: Consumer<T> {
  */
 public fun interface ServerConsumer<T>: Consumer<T> {
     override fun accept(t: T) {
-        if (FMLEnvironment.dist.isDedicatedServer) {
+        if (FabricLoader.getInstance().environmentType == EnvType.SERVER) {
             acceptServer(t)
         }
     }
 
-    @OnlyIn(Dist.DEDICATED_SERVER)
+    @Environment(EnvType.SERVER)
     public fun acceptServer(t: T)
 }

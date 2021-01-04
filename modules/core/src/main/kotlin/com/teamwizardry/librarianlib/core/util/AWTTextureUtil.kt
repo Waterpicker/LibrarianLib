@@ -1,7 +1,7 @@
 package com.teamwizardry.librarianlib.core.util
 
 import dev.thecodewarrior.mirror.Mirror
-import net.minecraft.client.renderer.texture.NativeImage
+import net.minecraft.client.texture.NativeImage
 import org.lwjgl.system.MemoryUtil
 import java.awt.image.BufferedImage
 import java.lang.IllegalArgumentException
@@ -18,7 +18,7 @@ public object AWTTextureUtil {
     public fun fillNativeImage(image: BufferedImage, nativeImage: NativeImage) {
         val imagePointer: Long = imagePointer.get(nativeImage)
 
-        if(nativeImage.format != NativeImage.PixelFormat.RGBA)
+        if(nativeImage.format != NativeImage.Format.ABGR)
             throw IllegalArgumentException("The ${nativeImage.format} format isn't supported. Only the RGBA image format is supported.")
         for(y in 0 until image.height) {
             for(x in 0 until image.width) {
