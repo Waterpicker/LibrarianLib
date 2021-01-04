@@ -49,7 +49,6 @@ allprojects {
 
     version = 1.0
 
-
     configurations {
         dev
     }

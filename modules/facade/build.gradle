@@ -12,13 +12,13 @@ switch (OperatingSystem.current()) {
 }
 
 dependencies {
-    modImplementation project(":core")
-    modImplementation project(":mosaic")
-    modImplementation project(":albedo")
-    modImplementation project(":etcetera")
-    modImplementation project(":prism")
-    modImplementation project(":courier")
-    testmodImplementation project(":testbase")
+    implementation project(":core")
+    implementation project(":mosaic")
+    implementation project(":albedo")
+    implementation project(":etcetera")
+    implementation project(":prism")
+    implementation project(":courier")
+    testImplementation project(":testbase")
     include("dev.thecodewarrior:bitfont:$bitfont_version") {
         exclude group: 'org.jetbrains.kotlin'
         exclude group: 'it.unimi.dsi' // fastutil is already included in MC

@@ -4,7 +4,7 @@ dependencies {
     include("dev.thecodewarrior.mirror:mirror:1.0.0b1") {
         exclude group: 'org.jetbrains.kotlin'
     }
-    testmodImplementation project(':testbase')
+    testImplementation project(':testbase')
 }
 
 processResources {

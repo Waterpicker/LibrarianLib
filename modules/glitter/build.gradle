@@ -1,6 +1,6 @@
 dependencies {
-    modImplementation project(":core")
-    modImplementation project(":etcetera")
-    testmodImplementation() project(":testbase")
+    implementation project(":core")
+    implementation project(":etcetera")
+    testImplementation project(":testbase")
     include "org.magicwerk:brownies-collections:0.9.13"
 }

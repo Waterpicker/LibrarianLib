@@ -1,7 +1,7 @@
 dependencies {
-    modImplementation project(":core")
-    modImplementation project(":prism")
-    modImplementation project(":courier")
-    modImplementation project(":facade")
-    testmodImplementation project(":testbase")
+    implementation project(":core")
+    implementation project(":prism")
+    implementation project(":courier")
+    implementation project(":facade")
+    testImplementation project(":testbase")
 }

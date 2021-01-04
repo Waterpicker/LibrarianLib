@@ -1,6 +1,6 @@
 dependencies {
-    modImplementation project(":core")
-    testmodImplementation project(":testbase")
+    implementation project(":core")
+    testImplementation project(":testbase")
     include("dev.thecodewarrior.prism:prism:0.1.0b1") {
         exclude module: 'mirror'
         exclude group: 'org.jetbrains.kotlin'
