@@ -17,7 +17,7 @@ abstract class NBTPrismTest {
      * - [value], when serialized, results in [tag]
      * - [tag], when deserialized, results in [value]
      */
-    inline fun<reified S> simple(type: TypeMirror, value: Any, tag: INBT, noinline equality: ((Any, Any) -> Boolean)? = null) {
+    inline fun<reified S> simple(type: TypeMirror, value: Any, tag: Tag, noinline equality: ((Any, Any) -> Boolean)? = null) {
         val serializer = prism[type].value
         assertEquals(S::class.java, serializer.javaClass)
         val serialized = serializer.write(value)
@@ -35,7 +35,7 @@ abstract class NBTPrismTest {
      * - [value], when serialized, results in [tag]
      * - [tag], when deserialized, results in [value]
      */
-    inline fun<reified T: Any, reified S> simple(value: T, tag: INBT, noinline equality: ((T, T) -> Boolean)? = null) {
+    inline fun<reified T: Any, reified S> simple(value: T, tag: Tag, noinline equality: ((T, T) -> Boolean)? = null) {
         val serializer = prism[Mirror.reflect<T>()].value
         assertEquals(S::class.java, serializer.javaClass)
         val serialized = serializer.write(value)
@@ -52,7 +52,7 @@ abstract class NBTPrismTest {
      * - the serializer's type is [S]
      * - [tag], when deserialized, results in [value]
      */
-    inline fun<reified S> simpleRead(type: TypeMirror, value: Any, tag: INBT, noinline equality: ((Any, Any) -> Boolean)? = null) {
+    inline fun<reified S> simpleRead(type: TypeMirror, value: Any, tag: Tag, noinline equality: ((Any, Any) -> Boolean)? = null) {
         val serializer = prism[type].value
         assertEquals(S::class.java, serializer.javaClass)
         val deserialized = serializer.read(tag, null)
@@ -67,7 +67,7 @@ abstract class NBTPrismTest {
      * - the serializer's type is [S]
      * - [tag], when deserialized, results in [value]
      */
-    inline fun<reified T: Any, reified S> simpleRead(value: T, tag: INBT, noinline equality: ((T, T) -> Boolean)? = null) {
+    inline fun<reified T: Any, reified S> simpleRead(value: T, tag: Tag, noinline equality: ((T, T) -> Boolean)? = null) {
         val serializer = prism[Mirror.reflect<T>()].value
         assertEquals(S::class.java, serializer.javaClass)
         val deserialized = serializer.read(tag, null)

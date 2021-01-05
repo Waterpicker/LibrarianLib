@@ -5,6 +5,7 @@ import dev.thecodewarrior.mirror.type.ClassMirror
 import dev.thecodewarrior.mirror.type.TypeMirror
 import dev.thecodewarrior.prism.DeserializationException
 import net.minecraft.nbt.INBT
+import net.minecraft.nbt.Tag
 import net.minecraftforge.common.util.INBTSerializable
 
 internal class INBTSerializableSerializerFactory(prism: NBTPrism): NBTSerializerFactory(prism, Mirror.reflect<INBTSerializable<*>>()) {
@@ -12,15 +13,15 @@ internal class INBTSerializableSerializerFactory(prism: NBTPrism): NBTSerializer
         return INBTSerializableSerializer(mirror as ClassMirror)
     }
 
-    class INBTSerializableSerializer(type: ClassMirror): NBTSerializer<INBTSerializable<INBT>>(type) {
-        override fun deserialize(tag: INBT, existing: INBTSerializable<INBT>?): INBTSerializable<INBT> {
+    class INBTSerializableSerializer(type: ClassMirror): NBTSerializer<INBTSerializable<Tag>>(type) {
+        override fun deserialize(tag: Tag, existing: INBTSerializable<Tag>?): INBTSerializable<Tag> {
             if(existing == null)
                 throw DeserializationException("INBTSerializable requires an existing value to deserialize")
             existing.deserializeNBT(tag)
             return existing
         }
 
-        override fun serialize(value: INBTSerializable<INBT>): INBT {
+        override fun serialize(value: INBTSerializable<Tag>): Tag {
             return value.serializeNBT()
         }
     }

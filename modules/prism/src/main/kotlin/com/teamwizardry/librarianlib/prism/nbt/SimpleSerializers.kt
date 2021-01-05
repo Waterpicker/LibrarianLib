@@ -3,12 +3,7 @@ package com.teamwizardry.librarianlib.prism.nbt
 import dev.thecodewarrior.mirror.Mirror
 import dev.thecodewarrior.mirror.type.ClassMirror
 import dev.thecodewarrior.mirror.type.TypeMirror
-import net.minecraft.nbt.ByteArrayNBT
-import net.minecraft.nbt.CompoundNBT
-import net.minecraft.nbt.INBT
-import net.minecraft.nbt.IntNBT
-import net.minecraft.nbt.NBTUtil
-import net.minecraft.nbt.NumberNBT
+import net.minecraft.nbt.*
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.util.BitSet
@@ -23,16 +18,16 @@ internal class PairSerializerFactory(prism: NBTPrism): NBTSerializerFactory(pris
         private val firstSerializer by prism[type.typeParameters[0]]
         private val secondSerializer by prism[type.typeParameters[1]]
 
-        override fun deserialize(tag: INBT, existing: Pair<Any?, Any?>?): Pair<Any?, Any?> {
-            @Suppress("NAME_SHADOWING") val tag = tag.expectType<CompoundNBT>("tag")
+        override fun deserialize(tag: Tag, existing: Pair<Any?, Any?>?): Pair<Any?, Any?> {
+            @Suppress("NAME_SHADOWING") val tag = tag.expectType<CompoundTag>("tag")
             return Pair(
                 if(tag.contains("First")) firstSerializer.read(tag.expect("First"), existing?.first) else null,
                 if(tag.contains("Second")) secondSerializer.read(tag.expect("Second"), existing?.second) else null
             )
         }
 
-        override fun serialize(value: Pair<Any?, Any?>): INBT {
-            val tag = CompoundNBT()
+        override fun serialize(value: Pair<Any?, Any?>): Tag {
+            val tag = CompoundTag()
             value.first?.also { tag.put("First", firstSerializer.write(it)) }
             value.second?.also { tag.put("Second", secondSerializer.write(it)) }
             return tag
@@ -50,8 +45,8 @@ internal class TripleSerializerFactory(prism: NBTPrism): NBTSerializerFactory(pr
         private val secondSerializer by prism[type.typeParameters[1]]
         private val thirdSerializer by prism[type.typeParameters[2]]
 
-        override fun deserialize(tag: INBT, existing: Triple<Any?, Any?, Any?>?): Triple<Any?, Any?, Any?> {
-            @Suppress("NAME_SHADOWING") val tag = tag.expectType<CompoundNBT>("tag")
+        override fun deserialize(tag: Tag, existing: Triple<Any?, Any?, Any?>?): Triple<Any?, Any?, Any?> {
+            @Suppress("NAME_SHADOWING") val tag = tag.expectType<CompoundTag>("tag")
             return Triple(
                 if(tag.contains("First")) firstSerializer.read(tag.expect("First"), existing?.first) else null,
                 if(tag.contains("Second")) secondSerializer.read(tag.expect("Second"), existing?.second) else null,
@@ -59,8 +54,8 @@ internal class TripleSerializerFactory(prism: NBTPrism): NBTSerializerFactory(pr
             )
         }
 
-        override fun serialize(value: Triple<Any?, Any?, Any?>): INBT {
-            val tag = CompoundNBT()
+        override fun serialize(value: Triple<Any?, Any?, Any?>): Tag {
+            val tag = CompoundTag()
             value.first?.also { tag.put("First", firstSerializer.write(it)) }
             value.second?.also { tag.put("Second", secondSerializer.write(it)) }
             value.third?.also { tag.put("Third", thirdSerializer.write(it)) }
@@ -70,53 +65,53 @@ internal class TripleSerializerFactory(prism: NBTPrism): NBTSerializerFactory(pr
 }
 
 internal object BigIntegerSerializer: NBTSerializer<BigInteger>() {
-    override fun deserialize(tag: INBT, existing: BigInteger?): BigInteger {
-        return BigInteger(tag.expectType<ByteArrayNBT>("tag").byteArray)
+    override fun deserialize(tag: Tag, existing: BigInteger?): BigInteger {
+        return BigInteger(tag.expectType<ByteArrayTag>("tag").byteArray)
     }
 
-    override fun serialize(value: BigInteger): INBT {
-        return ByteArrayNBT(value.toByteArray())
+    override fun serialize(value: BigInteger): Tag {
+        return ByteArrayTag(value.toByteArray())
     }
 }
 
 internal object BigDecimalSerializer: NBTSerializer<BigDecimal>() {
-    override fun deserialize(tag: INBT, existing: BigDecimal?): BigDecimal {
-        @Suppress("NAME_SHADOWING") val tag = tag.expectType<CompoundNBT>("tag")
+    override fun deserialize(tag: Tag, existing: BigDecimal?): BigDecimal {
+        @Suppress("NAME_SHADOWING") val tag = tag.expectType<CompoundTag>("tag")
         return BigDecimal(
-            BigInteger(tag.expect<ByteArrayNBT>("Value").byteArray),
-            tag.expect<NumberNBT>("Scale").int
+            BigInteger(tag.expect<ByteArrayTag>("Value").byteArray),
+            tag.expect<AbstractNumberTag>("Scale").int
         )
     }
 
-    override fun serialize(value: BigDecimal): INBT {
-        return CompoundNBT().also {
-            it.put("Value", ByteArrayNBT(value.unscaledValue().toByteArray()))
-            it.put("Scale", IntNBT.valueOf(value.scale()))
+    override fun serialize(value: BigDecimal): Tag {
+        return CompoundTag().also {
+            it.put("Value", ByteArrayTag(value.unscaledValue().toByteArray()))
+            it.put("Scale", IntTag.of(value.scale()))
         }
     }
 }
 
 internal object BitSetSerializer: NBTSerializer<BitSet>() {
-    override fun deserialize(tag: INBT, existing: BitSet?): BitSet {
-        val bitset = BitSet.valueOf(tag.expectType<ByteArrayNBT>("tag").byteArray)
+    override fun deserialize(tag: Tag, existing: BitSet?): BitSet {
+        val bitset = BitSet.valueOf(tag.expectType<ByteArrayTag>("tag").byteArray)
         return existing?.also {
             it.clear()
             it.or(bitset)
         } ?: bitset
     }
 
-    override fun serialize(value: BitSet): INBT {
-        return ByteArrayNBT(value.toByteArray())
+    override fun serialize(value: BitSet): Tag {
+        return ByteArrayTag(value.toByteArray())
     }
 }
 
 internal object UUIDSerializer: NBTSerializer<UUID>() {
-    override fun deserialize(tag: INBT, existing: UUID?): UUID {
-        return NBTUtil.readUniqueId(tag.expectType("tag"))
+    override fun deserialize(tag: Tag, existing: UUID?): UUID {
+        return NbtHelper.toUuid(tag.expectType("tag"))
     }
 
-    override fun serialize(value: UUID): INBT {
-        return NBTUtil.writeUniqueId(value)
+    override fun serialize(value: UUID): Tag {
+        return NbtHelper.fromUuid(value)
     }
 }
 

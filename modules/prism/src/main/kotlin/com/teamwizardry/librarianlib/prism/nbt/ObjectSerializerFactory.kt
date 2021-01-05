@@ -7,8 +7,8 @@ import dev.thecodewarrior.prism.DeserializationException
 import dev.thecodewarrior.prism.SerializationException
 import dev.thecodewarrior.prism.annotation.RefractClass
 import dev.thecodewarrior.prism.base.analysis.auto.ObjectAnalyzer
-import net.minecraft.nbt.CompoundNBT
-import net.minecraft.nbt.INBT
+import net.minecraft.nbt.CompoundTag
+import net.minecraft.nbt.Tag
 
 internal class ObjectSerializerFactory(prism: NBTPrism): NBTSerializerFactory(prism, Mirror.reflect<Any>(), { type ->
     (type as? ClassMirror)?.annotations?.any { it is RefractClass } == true
@@ -21,9 +21,9 @@ internal class ObjectSerializerFactory(prism: NBTPrism): NBTSerializerFactory(pr
         private val analyzer = ObjectAnalyzer<Any, NBTSerializer<*>>(prism, type.asClassMirror())
 
         @Suppress("UNCHECKED_CAST")
-        override fun deserialize(tag: INBT, existing: Any?): Any {
+        override fun deserialize(tag: Tag, existing: Any?): Any {
             analyzer.getReader(existing).use { state ->
-                @Suppress("NAME_SHADOWING") val tag = tag.expectType<CompoundNBT>("tag")
+                @Suppress("NAME_SHADOWING") val tag = tag.expectType<CompoundTag>("tag")
                 state.properties.forEach { property ->
                     try {
                         val valueTag = tag[property.name]
@@ -42,9 +42,9 @@ internal class ObjectSerializerFactory(prism: NBTPrism): NBTSerializerFactory(pr
             }
         }
 
-        override fun serialize(value: Any): INBT {
+        override fun serialize(value: Any): Tag {
             analyzer.getWriter(value).use { state ->
-                val tag = CompoundNBT()
+                val tag = CompoundTag()
                 state.properties.forEach { property ->
                     val v = property.value
                     if (v != null) {

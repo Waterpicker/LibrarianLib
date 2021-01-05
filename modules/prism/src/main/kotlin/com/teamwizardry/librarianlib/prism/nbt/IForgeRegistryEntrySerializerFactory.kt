@@ -6,6 +6,9 @@ import dev.thecodewarrior.mirror.type.TypeMirror
 import dev.thecodewarrior.prism.DeserializationException
 import net.minecraft.nbt.INBT
 import net.minecraft.nbt.StringNBT
+import net.minecraft.nbt.StringTag
+import net.minecraft.nbt.Tag
+import net.minecraft.util.Identifier
 import net.minecraft.util.ResourceLocation
 import net.minecraft.util.registry.Registry
 import net.minecraft.world.dimension.DimensionType
@@ -30,19 +33,19 @@ internal open class IForgeRegistryEntrySerializerFactory(prism: NBTPrism): NBTSe
          * The type checker doesn't like accessing `IForgeRegistry<*>.registryName`, so we have to cast it down to an
          * `IForgeRegistry<DummyRegistryEntry>` in order to access the name.
          */
-        private val registryName: ResourceLocation by lazy {
+        private val registryName: Identifier by lazy {
             @Suppress("UNCHECKED_CAST")
             (registry as IForgeRegistry<DummyRegistryEntry>).registryName
         }
 
-        override fun deserialize(tag: INBT, existing: IForgeRegistryEntry<*>?): IForgeRegistryEntry<*> {
-            val entryName = ResourceLocation(tag.expectType<StringNBT>("tag").string)
+        override fun deserialize(tag: Tag, existing: IForgeRegistryEntry<*>?): IForgeRegistryEntry<*> {
+            val entryName = Identifier(tag.expectType<StringTag>("tag").asString())
             return registry.getValue(entryName)
                 ?: throw DeserializationException("Could not find entry $entryName in $registryName")
         }
 
-        override fun serialize(value: IForgeRegistryEntry<*>): INBT {
-            return StringNBT.valueOf(value.registryName.toString())
+        override fun serialize(value: IForgeRegistryEntry<*>): Tag {
+            return StringTag.of(value.registryName.toString())
         }
 
         /**
@@ -59,13 +62,13 @@ internal open class IForgeRegistryEntrySerializerFactory(prism: NBTPrism): NBTSe
  * [IForgeRegistry], and thus isn't present in [GameRegistry.findRegistry]
  */
 internal object DimensionTypeSerializer: NBTSerializer<DimensionType>() {
-    override fun deserialize(tag: INBT, existing: DimensionType?): DimensionType {
-        val entryName = ResourceLocation(tag.expectType<StringNBT>("tag").string)
+    override fun deserialize(tag: Tag, existing: DimensionType?): DimensionType {
+        val entryName = Identifier(tag.expectType<StringTag>("tag").asString())
         @Suppress("DEPRECATION")
         return Registry.DIMENSION_TYPE.getValue(entryName).get() // DIMENSION_TYPE has a default value
     }
 
-    override fun serialize(value: DimensionType): INBT {
-        return StringNBT.valueOf(value.registryName.toString())
+    override fun serialize(value: DimensionType): Tag {
+        return StringTag.of(value.registryName.toString())
     }
 }

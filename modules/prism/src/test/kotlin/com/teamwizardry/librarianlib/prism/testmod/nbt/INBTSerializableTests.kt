@@ -3,7 +3,7 @@ package com.teamwizardry.librarianlib.prism.testmod.nbt
 import com.teamwizardry.librarianlib.core.util.kotlin.NBTBuilder
 import dev.thecodewarrior.mirror.Mirror
 import dev.thecodewarrior.prism.DeserializationException
-import net.minecraft.nbt.StringNBT
+import net.minecraft.nbt.StringTag
 import net.minecraftforge.common.util.INBTSerializable
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -32,13 +32,13 @@ internal class INBTSerializableTests: NBTPrismTest() {
         }
     }
 
-    class SerializableThing(var value: String): INBTSerializable<StringNBT> {
-        override fun serializeNBT(): StringNBT {
+    class SerializableThing(var value: String): INBTSerializable<StringTag> {
+        override fun serializeNBT(): StringTag {
             return NBTBuilder.string(value)
         }
 
-        override fun deserializeNBT(nbt: StringNBT) {
-            value = nbt.string
+        override fun deserializeNBT(nbt: StringTag) {
+            value = nbt.asString()
         }
     }
 }

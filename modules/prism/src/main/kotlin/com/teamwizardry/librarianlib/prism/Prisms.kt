@@ -19,7 +19,7 @@ public object Prisms {
             // minecraft types
             IForgeRegistryEntrySerializerFactory(prism),
             INBTSerializableSerializerFactory(prism),
-            INBTPassthroughSerializerFactory(prism),
+            TagPassthroughSerializerFactory(prism),
             TupleSerializerFactory(prism),
             ITextComponentSerializerFactory(prism)
         )
@@ -74,7 +74,7 @@ public object Prisms {
             RotationsSerializer,
             AxisAlignedBBSerializer,
             MutableBoundingBoxSerializer,
-            ResourceLocationSerializer,
+            IdentifierSerializer,
             BlockStateSerializer,
             GameProfileSerializer,
             ItemStackSerializer,
