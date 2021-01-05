@@ -1,15 +1,9 @@
 package com.teamwizardry.librarianlib.mirage
 
 import com.teamwizardry.librarianlib.core.util.kotlin.synchronized
-import net.minecraft.resources.FallbackResourceManager
-import net.minecraft.resources.IResourceManager
-import net.minecraft.resources.IResourcePack
-import net.minecraft.resources.ResourcePack
-import net.minecraft.resources.ResourcePackType
-import net.minecraft.resources.SimpleReloadableResourceManager
-import net.minecraft.resources.data.IMetadataSectionSerializer
-import net.minecraft.util.ResourceLocation
-import net.minecraft.util.text.LanguageMap
+import net.minecraft.resource.*
+import net.minecraft.resource.metadata.ResourceMetadataReader
+import net.minecraft.util.Identifier
 import java.io.ByteArrayInputStream
 import java.io.FileNotFoundException
 import java.io.InputStream
@@ -19,15 +13,15 @@ import java.util.function.Supplier
 import kotlin.concurrent.read
 import kotlin.concurrent.write
 
-public class Mirage private constructor(public val type: ResourcePackType) {
-    internal val fallback = FallbackResourceManager(type, "librarianlib")
-    internal val files = mutableMapOf<ResourceLocation, ByteArray>().synchronized()
-    internal val generators = mutableMapOf<ResourceLocation, Supplier<ByteArray>>().synchronized()
+public class Mirage private constructor(public val type: ResourceType) {
+    internal val fallback = NamespaceResourceManager(type, "librarianlib")
+    internal val files = mutableMapOf<Identifier, ByteArray>().synchronized()
+    internal val generators = mutableMapOf<Identifier, Supplier<ByteArray>>().synchronized()
     internal val packs = mutableListOf<VirtualResourcePack>().synchronized()
     internal val languageKeys = mutableMapOf<String, String>().synchronized()
     internal val lock = ReentrantReadWriteLock()
 
-    public fun remove(location: ResourceLocation): Boolean {
+    public fun remove(location: Identifier): Boolean {
         lock.write {
             var removed = false
             removed = removeFile(location) || removed // can't do removeFile || removeGenerator because of short-circuiting
@@ -36,7 +30,7 @@ public class Mirage private constructor(public val type: ResourcePackType) {
         }
     }
 
-    public fun removeFile(location: ResourceLocation): Boolean {
+    public fun removeFile(location: Identifier): Boolean {
         lock.write {
             if(files.remove(location) != null) {
                 logger.debug("Removed file $location")
@@ -46,7 +40,7 @@ public class Mirage private constructor(public val type: ResourcePackType) {
         }
     }
 
-    public fun removeGenerator(location: ResourceLocation): Boolean {
+    public fun removeGenerator(location: Identifier): Boolean {
         lock.write {
             if(generators.remove(location) != null) {
                 logger.debug("Removed generator $location")
@@ -56,11 +50,11 @@ public class Mirage private constructor(public val type: ResourcePackType) {
         }
     }
 
-    public fun add(location: ResourceLocation, text: String) {
+    public fun add(location: Identifier, text: String) {
         addRaw(location, text.toByteArray())
     }
 
-    public fun addRaw(location: ResourceLocation, data: ByteArray) {
+    public fun addRaw(location: Identifier, data: ByteArray) {
         lock.write {
             files[location] = data
             logger.debug("Added resource $location")
@@ -70,7 +64,7 @@ public class Mirage private constructor(public val type: ResourcePackType) {
     /**
      * Note: the passed generator may be run on another thread
      */
-    public fun add(location: ResourceLocation, generator: Supplier<String>) {
+    public fun add(location: Identifier, generator: Supplier<String>) {
         addRaw(location) {
             generator.get().toByteArray()
         }
@@ -79,7 +73,7 @@ public class Mirage private constructor(public val type: ResourcePackType) {
     /**
      * Note: the passed generator may be run on another thread
      */
-    public fun addRaw(location: ResourceLocation, generator: Supplier<ByteArray>) {
+    public fun addRaw(location: Identifier, generator: Supplier<ByteArray>) {
         lock.write {
             generators[location] = generator
             logger.debug("Added resource generator $location")
@@ -101,14 +95,14 @@ public class Mirage private constructor(public val type: ResourcePackType) {
 
     public companion object {
         @JvmField
-        public val client: Mirage = Mirage(ResourcePackType.CLIENT_RESOURCES)
+        public val client: Mirage = Mirage(ResourceType.CLIENT_RESOURCES)
         @JvmField
-        public val data: Mirage = Mirage(ResourcePackType.SERVER_DATA)
+        public val data: Mirage = Mirage(ResourceType.SERVER_DATA)
 
         @JvmStatic
-        public fun resources(type: ResourcePackType): Mirage = when(type) {
-            ResourcePackType.CLIENT_RESOURCES -> client
-            ResourcePackType.SERVER_DATA -> data
+        public fun resources(type: ResourceType): Mirage = when(type) {
+            ResourceType.CLIENT_RESOURCES -> client
+            ResourceType.SERVER_DATA -> data
         }
 
         /**
@@ -119,8 +113,8 @@ public class Mirage private constructor(public val type: ResourcePackType) {
          * - [FallbackResourceManager.&lt;init&gt;][FallbackResourceManager]
          */
         @JvmStatic
-        public fun `fallbackresourcemanager-init-asm`(pack: FallbackResourceManager) {
-            pack.resourcePacks.add(Pack)
+        public fun `fallbackresourcemanager-init-asm`(pack: NamespaceResourceManager) {
+            pack.addPack(Pack)
         }
 
         /**
@@ -133,11 +127,11 @@ public class Mirage private constructor(public val type: ResourcePackType) {
          * - [SimpleReloadableResourceManager.getResource]
          * - [SimpleReloadableResourceManager.hasResource]
          * - [SimpleReloadableResourceManager.getAllResources]
-         * - [SimpleReloadableResourceManager.getAllResourceLocations]
+         * - [SimpleReloadableResourceManager.getAllIdentifiers]
          */
         @JvmStatic
         @JvmName("simplereloadableresourcemanager-namespace_fallback-asm")
-        internal fun simpleReloadableResourceManagerNamespaceFallback(manager: IResourceManager?, type: ResourcePackType): IResourceManager? {
+        internal fun simpleReloadableResourceManagerNamespaceFallback(manager: ResourceManager?, type: ResourceType): ResourceManager? {
             return manager ?: resources(type).fallback
         }
 
@@ -149,8 +143,8 @@ public class Mirage private constructor(public val type: ResourcePackType) {
         @JvmName("languagemap-trytranslatekey-asm")
         internal fun languageMapTryTranslateKey(result: String?, key: String?): String? {
             return result
-                ?: resources(ResourcePackType.SERVER_DATA).read { it.languageKeys[key] }
-                ?: resources(ResourcePackType.CLIENT_RESOURCES).read { it.languageKeys[key] }
+                ?: resources(ResourceType.SERVER_DATA).read { it.languageKeys[key] }
+                ?: resources(ResourceType.CLIENT_RESOURCES).read { it.languageKeys[key] }
         }
 
         /**
@@ -161,8 +155,8 @@ public class Mirage private constructor(public val type: ResourcePackType) {
         @JvmName("languagemap-exists-asm")
         internal fun languageMapExists(result: Boolean, key: String?): Boolean {
             return result ||
-                resources(ResourcePackType.SERVER_DATA).read { key in it.languageKeys } ||
-                resources(ResourcePackType.CLIENT_RESOURCES).read { key in it.languageKeys }
+                resources(ResourceType.SERVER_DATA).read { key in it.languageKeys } ||
+                resources(ResourceType.CLIENT_RESOURCES).read { key in it.languageKeys }
         }
 
         /**
@@ -172,8 +166,8 @@ public class Mirage private constructor(public val type: ResourcePackType) {
         @JvmName("locale-translatekeyprivate-asm")
         internal fun localeTranslateKeyPrivate(result: String?, key: String?): String? {
             return result
-                ?: resources(ResourcePackType.SERVER_DATA).read { it.languageKeys[key] }
-                ?: resources(ResourcePackType.CLIENT_RESOURCES).read { it.languageKeys[key] }
+                ?: resources(ResourceType.SERVER_DATA).read { it.languageKeys[key] }
+                ?: resources(ResourceType.CLIENT_RESOURCES).read { it.languageKeys[key] }
         }
 
         /**
@@ -183,14 +177,14 @@ public class Mirage private constructor(public val type: ResourcePackType) {
         @JvmName("locale-haskey-asm")
         internal fun localeHasKey(result: Boolean, key: String?): Boolean {
             return result ||
-                resources(ResourcePackType.SERVER_DATA).read { key in it.languageKeys } ||
-                resources(ResourcePackType.CLIENT_RESOURCES).read { key in it.languageKeys }
+                resources(ResourceType.SERVER_DATA).read { key in it.languageKeys } ||
+                resources(ResourceType.CLIENT_RESOURCES).read { key in it.languageKeys }
         }
     }
 
-    private object Pack: IResourcePack {
+    private object Pack: ResourcePack {
 
-        override fun getResourceStream(type: ResourcePackType, location: ResourceLocation): InputStream {
+        override fun open(type: ResourceType, location: Identifier): InputStream {
             resources(type).read { resources ->
                 resources.files[location]?.also {
                     return ByteArrayInputStream(it)
@@ -207,9 +201,9 @@ public class Mirage private constructor(public val type: ResourcePackType) {
             }
         }
 
-        override fun getAllResourceLocations(type: ResourcePackType, namespaceIn: String, pathIn: String, maxDepth: Int, filter: Predicate<String>): Collection<ResourceLocation> {
+        override fun findResources(type: ResourceType, namespaceIn: String, pathIn: String, maxDepth: Int, filter: Predicate<String>): Collection<Identifier> {
             resources(type).read { resources ->
-                val locations = mutableSetOf<ResourceLocation>()
+                val locations = mutableSetOf<Identifier>()
 
                 locations.addAll(resources.files.keys)
                 locations.addAll(resources.generators.keys)
@@ -228,7 +222,7 @@ public class Mirage private constructor(public val type: ResourcePackType) {
             }
         }
 
-        override fun resourceExists(type: ResourcePackType, location: ResourceLocation): Boolean {
+        override fun contains(type: ResourceType, location: Identifier): Boolean {
             resources(type).read { resources ->
                 return location in resources.files || location in resources.generators || resources.packs.any { location in it }
             }
@@ -237,14 +231,15 @@ public class Mirage private constructor(public val type: ResourcePackType) {
         override fun getName(): String = "LibrarianLib Mirage Resources"
 
         // The LibrarianLib virtual resource pack is added using ASM, so this is never normally called
-        override fun getResourceNamespaces(type: ResourcePackType): Set<String> = setOf()
+        override fun getNamespaces(type: ResourceType): Set<String> = setOf()
 
-        override fun getRootResourceStream(fileName: String): InputStream {
+
+        override fun openRoot(fileName: String): InputStream {
             return javaClass.getResourceAsStream("/assets/librarianlib/mirage/root_resources/$fileName")
         }
 
-        override fun <T: Any?> getMetadata(deserializer: IMetadataSectionSerializer<T>): T? {
-            return ResourcePack.getResourceMetadata(deserializer, getRootResourceStream("pack.mcmeta"))
+        override fun <T: Any?> parseMetadata(deserializer: ResourceMetadataReader<T>): T? {
+            return AbstractFileResourcePack.parseMetadata(deserializer, openRoot("pack.mcmeta"))
         }
 
         override fun close() {
