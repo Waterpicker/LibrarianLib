@@ -5,13 +5,14 @@ import com.teamwizardry.librarianlib.glitter.testmod.modid
 import net.minecraft.entity.EntityClassification
 import net.minecraft.entity.AreaEffectCloudEntity
 import net.minecraft.entity.EntityType
+import net.minecraft.entity.SpawnGroup
 import net.minecraft.util.ResourceLocation
 import net.minecraftforge.registries.ForgeRegistries
 
 object TestEntities {
     val spawner = EntityType.Builder.create<ParticleSpawnerEntity>({ _, world ->
         ParticleSpawnerEntity(world)
-    }, EntityClassification.MISC)
+    }, SpawnGroup.MISC)
         .setCustomClientFactory { _, world ->
             ParticleSpawnerEntity(world)
         }

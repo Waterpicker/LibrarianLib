@@ -1,12 +1,10 @@
 package com.teamwizardry.librarianlib.glitter.testmod.systems
 
-import com.teamwizardry.librarianlib.glitter.ParticleSystem
 import com.teamwizardry.librarianlib.glitter.bindings.ConstantBinding
 import com.teamwizardry.librarianlib.glitter.modules.BasicPhysicsUpdateModule
-import com.teamwizardry.librarianlib.glitter.modules.GlLineBeamRenderModule
 import com.teamwizardry.librarianlib.glitter.modules.SpriteRenderModule
 import net.minecraft.entity.Entity
-import net.minecraft.util.ResourceLocation
+import net.minecraft.util.Identifier
 
 object IgnoreParticleSettingSystem: TestSystem("ignore_particle_setting") {
     override fun configure() {
@@ -28,7 +26,7 @@ object IgnoreParticleSettingSystem: TestSystem("ignore_particle_setting") {
 
         renderModules.add(SpriteRenderModule(
             renderType = SpriteRenderModule.simpleRenderType(
-                sprite = ResourceLocation("minecraft", "textures/item/clay_ball.png")
+                sprite = Identifier("minecraft", "textures/item/clay_ball.png")
             ),
             previousPosition = previousPosition,
             position = position,
@@ -40,8 +38,8 @@ object IgnoreParticleSettingSystem: TestSystem("ignore_particle_setting") {
     }
 
     override fun spawn(player: Entity) {
-        val eyePos = player.getEyePosition(0f)
-        val look = player.lookVec
+        val eyePos = player.getCameraPosVec(0f)
+        val look = player.rotationVector
 
         val spawnDistance = 2
         val spawnVelocity = 0.2

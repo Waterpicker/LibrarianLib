@@ -2,28 +2,24 @@ package com.teamwizardry.librarianlib.glitter.testmod.item
 
 import com.teamwizardry.librarianlib.core.util.sided.SidedRunnable
 import com.teamwizardry.librarianlib.glitter.testmod.entity.ParticleSpawnerEntity
-import com.teamwizardry.librarianlib.glitter.testmod.init.TestItemGroup
+import com.teamwizardry.librarianlib.glitter.testmod.init.group
 import com.teamwizardry.librarianlib.glitter.testmod.modid
 import com.teamwizardry.librarianlib.glitter.testmod.systems.ParticleSystems
 import net.minecraft.entity.LivingEntity
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
-import net.minecraft.item.UseAction
-import net.minecraft.util.ActionResult
-import net.minecraft.util.ActionResultType
-import net.minecraft.util.Hand
-import net.minecraft.util.ResourceLocation
+import net.minecraft.util.*
 import net.minecraft.world.World
 
 class ParticleSpawnerItem(val type: String): Item(
-    Properties()
-        .group(TestItemGroup)
-        .maxStackSize(1)
+    Settings()
+        .group(group)
+        .maxCount(1)
 ) {
 
     init {
-        this.registryName = ResourceLocation(modid, "spawn_$type")
+        this.registryName = Identifier(modid, "spawn_$type")
     }
 
     override fun getUseAction(stack: ItemStack): UseAction {
@@ -31,30 +27,30 @@ class ParticleSpawnerItem(val type: String): Item(
     }
 
     override fun onUsingTick(stack: ItemStack, player: LivingEntity, count: Int) {
-        if(player.world.isRemote)
+        if(player.world.isClient)
             SidedRunnable.client {
                 ParticleSystems.spawn(type, player)
             }
     }
 
-    override fun onItemRightClick(worldIn: World, playerIn: PlayerEntity, handIn: Hand): ActionResult<ItemStack> {
-        if(playerIn.isCrouching) {
-            if(!worldIn.isRemote) {
-                val eye = playerIn.getEyePosition(0f)
+    override fun use(worldIn: World, playerIn: PlayerEntity, handIn: Hand): TypedActionResult<ItemStack> {
+        if(playerIn.isSneaking) {
+            if(!worldIn.isClient) {
+                val eye = playerIn.getCameraPosVec(0f)
                 val spawner = ParticleSpawnerEntity(worldIn)
                 spawner.system = type
-                spawner.setPosition(eye.x, eye.y - spawner.eyeHeight, eye.z)
-                spawner.rotationPitch = playerIn.rotationPitch
-                spawner.rotationYaw = playerIn.rotationYaw
-                worldIn.addEntity(spawner)
+                spawner.setPos(eye.x, eye.y - spawner.eyeY, eye.z)
+                spawner.pitch = playerIn.pitch
+                spawner.yaw = playerIn.yaw
+                worldIn.spawnEntity(spawner)
             }
         } else {
-            playerIn.activeHand = handIn
+            playerIn.setCurrentHand(handIn)
         }
-        return ActionResult(ActionResultType.SUCCESS, playerIn.getHeldItem(handIn))
+        return TypedActionResult(ActionResult.SUCCESS, playerIn.getStackInHand(handIn))
     }
 
-    override fun getUseDuration(stack: ItemStack): Int {
+    override fun getMaxUseTime(stack: ItemStack?): Int {
         return 3600 * 20 // an hour :P
     }
 }

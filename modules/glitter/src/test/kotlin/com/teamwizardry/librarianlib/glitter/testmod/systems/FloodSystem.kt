@@ -1,15 +1,13 @@
 package com.teamwizardry.librarianlib.glitter.testmod.systems
 
 import com.teamwizardry.librarianlib.core.rendering.BlendMode
-import com.teamwizardry.librarianlib.glitter.ParticleSystem
 import com.teamwizardry.librarianlib.glitter.bindings.ConstantBinding
 import com.teamwizardry.librarianlib.glitter.modules.BasicPhysicsUpdateModule
-import com.teamwizardry.librarianlib.glitter.modules.GlLineBeamRenderModule
 import com.teamwizardry.librarianlib.glitter.modules.SpriteRenderModule
 import net.minecraft.entity.Entity
-import net.minecraft.util.ResourceLocation
-import net.minecraft.util.math.Vec3d
+import net.minecraft.util.Identifier
 import net.minecraft.util.math.MathHelper
+import net.minecraft.util.math.Vec3d
 
 
 
@@ -33,7 +31,7 @@ object FloodSystem: TestSystem("flood") {
 
         renderModules.add(SpriteRenderModule(
             renderType = SpriteRenderModule.simpleRenderType(
-                sprite = ResourceLocation("librarianlib-glitter-test:textures/glitter/glow.png"),
+                sprite = Identifier("librarianlib-glitter-test:textures/glitter/glow.png"),
                 blendMode = BlendMode.ADDITIVE,
                 writeDepth = false,
                 blur = true
@@ -46,13 +44,13 @@ object FloodSystem: TestSystem("flood") {
     }
 
     override fun spawn(player: Entity) {
-        val eyePos = player.getEyePosition(0f)
+        val eyePos = player.getCameraPosVec(0f)
 
         repeat(20) {
             doSpawn(
                 eyePos,
-                player.rotationPitch + (Math.random() - 0.5).toFloat() * 40,
-                player.rotationYaw + (Math.random() - 0.5).toFloat() * 180
+                player.pitch + (Math.random() - 0.5).toFloat() * 40,
+                player.yaw + (Math.random() - 0.5).toFloat() * 180
             )
         }
     }

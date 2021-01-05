@@ -1,13 +1,12 @@
 package com.teamwizardry.librarianlib.glitter.testmod.systems
 
-import com.teamwizardry.librarianlib.math.plus
-import com.teamwizardry.librarianlib.math.times
-import com.teamwizardry.librarianlib.glitter.ParticleSystem
 import com.teamwizardry.librarianlib.glitter.bindings.ConstantBinding
 import com.teamwizardry.librarianlib.glitter.modules.DepthSortModule
 import com.teamwizardry.librarianlib.glitter.modules.SpriteRenderModule
+import com.teamwizardry.librarianlib.math.plus
+import com.teamwizardry.librarianlib.math.times
 import net.minecraft.entity.Entity
-import net.minecraft.util.ResourceLocation
+import net.minecraft.util.Identifier
 
 object DepthSortSystem: TestSystem("depthsort") {
     override fun configure() {
@@ -18,7 +17,7 @@ object DepthSortSystem: TestSystem("depthsort") {
         globalUpdateModules.add(DepthSortModule(pos, depth))
         renderModules.add(SpriteRenderModule(
             renderType = SpriteRenderModule.simpleRenderType(
-                sprite = ResourceLocation("librarianlib-glitter-test:textures/glitter/depthsort.png")
+                sprite = Identifier("librarianlib-glitter-test:textures/glitter/depthsort.png")
             ),
             previousPosition = pos,
             position = pos,
@@ -28,8 +27,8 @@ object DepthSortSystem: TestSystem("depthsort") {
     }
 
     override fun spawn(player: Entity) {
-        val eyePos = player.getEyePosition(0f)
-        val look = player.lookVec
+        val eyePos = player.getCameraPosVec(0f)
+        val look = player.rotationVector
         val center = eyePos + look * 5
 
         for(i in 0 until 5) {

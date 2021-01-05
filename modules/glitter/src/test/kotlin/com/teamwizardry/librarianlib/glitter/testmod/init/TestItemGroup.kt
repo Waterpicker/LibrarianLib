@@ -1,11 +1,8 @@
 package com.teamwizardry.librarianlib.glitter.testmod.init
 
-import net.minecraft.item.ItemGroup
+import net.fabricmc.fabric.api.client.itemgroup.FabricItemGroupBuilder
 import net.minecraft.item.ItemStack
 import net.minecraft.item.Items
+import net.minecraft.util.Identifier
 
-object TestItemGroup: ItemGroup("liblibtest.particles") {
-    override fun createIcon(): ItemStack {
-        return ItemStack(Items.IRON_INGOT)
-    }
-}
+var group = FabricItemGroupBuilder.create(Identifier("liblibtest.particles")).icon { ItemStack(Items.IRON_INGOT) }.build()!!

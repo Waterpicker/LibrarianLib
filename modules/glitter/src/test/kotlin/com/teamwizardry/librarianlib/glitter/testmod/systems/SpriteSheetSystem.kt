@@ -1,10 +1,9 @@
 package com.teamwizardry.librarianlib.glitter.testmod.systems
 
-import com.teamwizardry.librarianlib.glitter.ParticleSystem
 import com.teamwizardry.librarianlib.glitter.bindings.ConstantBinding
 import com.teamwizardry.librarianlib.glitter.modules.SpriteRenderModule
 import net.minecraft.entity.Entity
-import net.minecraft.util.ResourceLocation
+import net.minecraft.util.Identifier
 
 object SpriteSheetSystem: TestSystem("spritesheet") {
     override fun configure() {
@@ -14,7 +13,7 @@ object SpriteSheetSystem: TestSystem("spritesheet") {
 
         renderModules.add(SpriteRenderModule(
             renderType = SpriteRenderModule.simpleRenderType(
-                sprite = ResourceLocation("librarianlib-glitter-test:textures/glitter/spritesheet.png")
+                sprite = Identifier("librarianlib-glitter-test:textures/glitter/spritesheet.png")
             ),
             previousPosition = pos,
             position = pos,
@@ -26,8 +25,8 @@ object SpriteSheetSystem: TestSystem("spritesheet") {
     }
 
     override fun spawn(player: Entity) {
-        val eyePos = player.getEyePosition(0f)
-        val look = player.lookVec
+        val eyePos = player.getCameraPosVec(0f)
+        val look = player.rotationVector
 
         this.addParticle(200,
             eyePos.x + look.x * 2,
