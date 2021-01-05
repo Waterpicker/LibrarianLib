@@ -15,6 +15,9 @@ import net.minecraft.block.Block
 import net.minecraft.block.Blocks
 import net.minecraft.entity.player.ServerPlayerEntity
 import net.minecraft.network.PacketBuffer
+import net.minecraft.network.PacketByteBuf
+import net.minecraft.server.network.ServerPlayerEntity
+import net.minecraft.text.LiteralText
 import net.minecraft.util.text.StringTextComponent
 import net.minecraftforge.fml.common.Mod
 import net.minecraftforge.fml.network.NetworkDirection
@@ -28,14 +31,14 @@ object LibrarianLibCourierTestMod: TestMod(LibrarianLibCourierModule) {
 
     init {
         channel.registerCourierPacket<TestPacket>(NetworkDirection.PLAY_TO_CLIENT) { packet, context ->
-            Client.player?.sendMessage(StringTextComponent("Register handler: $packet"))
+            Client.player?.sendMessage(LiteralText("Register handler: $packet"))
         }
 
         +TestItem(TestItemConfig("server_to_client", "Server to client packet") {
             rightClick.server {
                 val packet = TestPacket(Blocks.DIRT, 42)
                 packet.manual = 100
-                player.sendMessage(StringTextComponent("Server sending: $packet"))
+                player.sendMessage(LiteralText("Server sending: $packet"), false)
                 channel.send(PacketDistributor.PLAYER.with { player as ServerPlayerEntity }, packet)
             }
         })
@@ -46,17 +49,17 @@ object LibrarianLibCourierTestMod: TestMod(LibrarianLibCourierModule) {
 data class TestPacket @RefractConstructor constructor(@Refract val block: Block, @Refract val value: Int): CourierPacket {
     var manual: Int = 0
 
-    override fun writeBytes(buffer: PacketBuffer) {
+    override fun writeBytes(buffer: PacketByteBuf) {
         buffer.writeVarInt(manual)
     }
 
-    override fun readBytes(buffer: PacketBuffer) {
+    override fun readBytes(buffer: PacketByteBuf) {
         manual = buffer.readVarInt()
     }
 
     override fun handle(context: NetworkEvent.Context) {
         clientOnly {
-            Client.player?.sendMessage(StringTextComponent("CourierPacket handler: $this"))
+            Client.player?.sendMessage(LiteralText("CourierPacket handler: $this"))
         }
     }
 }

@@ -9,6 +9,7 @@ import dev.thecodewarrior.prism.annotation.RefractConstructor;
 import net.minecraft.block.Block;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.PacketBuffer;
+import net.minecraft.network.PacketByteBuf;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.fml.network.NetworkDirection;
 import net.minecraftforge.fml.network.NetworkEvent;
@@ -30,13 +31,13 @@ public class ExamplePrismPacket implements CourierPacket {
 
     // optionally write anything not supported by Prism.
     @Override
-    public void writeBytes(@NotNull PacketBuffer buffer) {
+    public void writeBytes(@NotNull PacketByteBuf buffer) {
     }
 
     // optionally read anything not supported by Prism.
     // you'll need to use a non-final field and initialize it in this method.
     @Override
-    public void readBytes(@NotNull PacketBuffer buffer) {
+    public void readBytes(@NotNull PacketByteBuf buffer) {
     }
 
     @Override
@@ -54,7 +55,7 @@ public class ExamplePrismPacket implements CourierPacket {
             // **NEVER** trust the client. If we don't do this
             // it would allow a hacked client to generate and load
             // arbitrary chunks.
-            if (!player.world.isBlockLoaded(this.pos)) {
+            if (!player.world.isChunkLoaded(this.pos)) {
                 return;
             }
             if (player.world.getBlockState(this.pos).getBlock() != this.block) {

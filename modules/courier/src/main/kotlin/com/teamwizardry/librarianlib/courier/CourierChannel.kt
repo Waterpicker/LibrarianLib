@@ -1,5 +1,6 @@
 package com.teamwizardry.librarianlib.courier
 
+import net.minecraft.util.Identifier
 import net.minecraft.util.ResourceLocation
 import net.minecraftforge.fml.network.NetworkDirection
 import net.minecraftforge.fml.network.NetworkEvent
@@ -9,7 +10,7 @@ import java.util.Optional
 import java.util.function.BiConsumer
 import java.util.function.Predicate
 
-public class CourierChannel(private val name: ResourceLocation, private var version: String) {
+public class CourierChannel(private val name: Identifier, private var version: String) {
     private var clientAcceptedVersions: Predicate<String> = Predicate { it == version }
     private var serverAcceptedVersions: Predicate<String> = Predicate { it == version }
 

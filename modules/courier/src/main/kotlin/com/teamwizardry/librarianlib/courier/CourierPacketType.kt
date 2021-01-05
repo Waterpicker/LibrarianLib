@@ -4,7 +4,9 @@ import com.teamwizardry.librarianlib.prism.Prisms
 import dev.thecodewarrior.mirror.Mirror
 import dev.thecodewarrior.prism.annotation.RefractClass
 import net.minecraft.nbt.CompoundNBT
+import net.minecraft.nbt.CompoundTag
 import net.minecraft.network.PacketBuffer
+import net.minecraft.network.PacketByteBuf
 import net.minecraftforge.fml.network.NetworkEvent
 import java.lang.IllegalArgumentException
 import java.lang.IllegalStateException
@@ -21,8 +23,8 @@ internal class CourierPacketType<T: Any>(type: Class<T>, val handler: BiConsumer
     }
     private val serializer by Prisms.nbt[Mirror.reflect(type)]
 
-    override fun encode(packet: T, buffer: PacketBuffer) {
-        val tag = serializer.write(packet) as CompoundNBT
+    override fun encode(packet: T, buffer: PacketByteBuf) {
+        val tag = serializer.write(packet) as CompoundTag
         buffer.writeCompoundTag(tag)
         (packet as? CourierPacket)?.writeBytes(buffer)
     }

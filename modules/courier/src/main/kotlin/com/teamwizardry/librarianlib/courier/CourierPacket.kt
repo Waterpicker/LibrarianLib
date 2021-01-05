@@ -2,6 +2,7 @@ package com.teamwizardry.librarianlib.courier
 
 import dev.thecodewarrior.prism.annotation.Refract
 import net.minecraft.network.PacketBuffer
+import net.minecraft.network.PacketByteBuf
 import net.minecraft.world.IWorldReader
 import net.minecraftforge.fml.network.NetworkEvent
 
@@ -10,13 +11,13 @@ public interface CourierPacket {
      * Writes the packet data to the buffer. Any [@Refract][Refract] annotated fields do NOT need to be written in this
      * method.
      */
-    public fun writeBytes(buffer: PacketBuffer) {}
+    public fun writeBytes(buffer: PacketByteBuf) {}
 
     /**
      * Reads the packet data from the buffer. Any [@Refract][Refract] annotated fields do NOT need to be read in this
      * method.
      */
-    public fun readBytes(buffer: PacketBuffer) {}
+    public fun readBytes(buffer: PacketByteBuf) {}
 
     /**
      * Handles the packet being received. This is handled on the network thread, so don't access anything that isn't

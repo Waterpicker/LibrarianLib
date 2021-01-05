@@ -5,7 +5,7 @@ import com.teamwizardry.librarianlib.core.util.sided.SidedSupplier;
 import com.teamwizardry.librarianlib.courier.PacketType;
 import net.minecraft.block.Block;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.network.PacketBuffer;
+import net.minecraft.network.PacketByteBuf;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.fml.network.NetworkDirection;
 import net.minecraftforge.fml.network.NetworkEvent;
@@ -30,13 +30,13 @@ public class ExamplePacketType extends PacketType<ExamplePacketType.Packet> {
     }
 
     @Override
-    public void encode(Packet packet, @NotNull PacketBuffer buffer) {
+    public void encode(Packet packet, @NotNull PacketByteBuf buffer) {
         buffer.writeBlockPos(packet.pos);
         buffer.writeRegistryId(packet.block);
     }
 
     @Override
-    public Packet decode(@NotNull PacketBuffer buffer) {
+    public Packet decode(@NotNull PacketByteBuf buffer) {
         BlockPos position = buffer.readBlockPos();
         Block block = buffer.readRegistryIdSafe(Block.class);
         return new Packet(position, block);
@@ -57,7 +57,7 @@ public class ExamplePacketType extends PacketType<ExamplePacketType.Packet> {
             // **NEVER** trust the client. If we don't do this
             // it would allow a hacked client to generate and load
             // arbitrary chunks.
-            if (!player.world.isBlockLoaded(packet.pos)) {
+            if (!player.world.isChunkLoaded(packet.pos)) {
                 return;
             }
             if (player.world.getBlockState(packet.pos).getBlock() != packet.block) {
