@@ -9,9 +9,12 @@ import com.teamwizardry.librarianlib.core.util.kotlin.color
 import com.teamwizardry.librarianlib.core.util.kotlin.pos2d
 import com.teamwizardry.librarianlib.math.Matrix3d
 import com.teamwizardry.librarianlib.math.Matrix4d
+import net.minecraft.client.render.VertexConsumerProvider
 import net.minecraft.client.renderer.IRenderTypeBuffer
 import net.minecraft.client.renderer.Matrix4f
+import net.minecraft.util.Identifier
 import net.minecraft.util.ResourceLocation
+import net.minecraft.util.math.Matrix4f
 import org.lwjgl.opengl.GL11
 import java.awt.Color
 
@@ -122,36 +125,36 @@ internal object MatrixUniform: ShaderTest<MatrixUniform.Test>() {
             01f, 11f  // column 1
         )
 
-        val buffer = IRenderTypeBuffer.getImpl(Client.tessellator.buffer)
+        val buffer = VertexConsumerProvider.immediate(Client.tessellator.buffer)
         val vb = buffer.getBuffer(renderType)
 
-        vb.pos2d(minX, maxY).color(c).tex(0f, 1f).endVertex()
-        vb.pos2d(maxX, maxY).color(c).tex(1f, 1f).endVertex()
-        vb.pos2d(maxX, minY).color(c).tex(1f, 0f).endVertex()
-        vb.pos2d(minX, minY).color(c).tex(0f, 0f).endVertex()
+        vb.pos2d(minX, maxY).color(c).texture(0f, 1f).next()
+        vb.pos2d(maxX, maxY).color(c).texture(1f, 1f).next()
+        vb.pos2d(maxX, minY).color(c).texture(1f, 0f).next()
+        vb.pos2d(minX, minY).color(c).texture(0f, 0f).next()
 
         shader.bind()
-        buffer.finish()
+        buffer.draw()
         shader.unbind()
 
-        val fr = Client.minecraft.fontRenderer
+        val fr = Client.minecraft.textRenderer
         val cellSize = 16
-        fr.drawString(mat4Label,
-            (minX + cellSize * 2 - fr.getStringWidth(mat4Label)/2).toInt().toFloat(),
+        fr.draw(mat4Label,
+            (minX + cellSize * 2 - fr.getWidth(mat4Label)/2).toInt().toFloat(),
             (minY + cellSize * 2 - 4).toInt().toFloat(),
             Color.WHITE.rgb
         )
-        fr.drawString(mat3Label,
-            (minX + cellSize * 5.5 - fr.getStringWidth(mat3Label)/2).toInt().toFloat(),
+        fr.draw(mat3Label,
+            (minX + cellSize * 5.5 - fr.getWidth(mat3Label)/2).toInt().toFloat(),
             (minY + cellSize * 5.5 - 4).toInt().toFloat(),
             Color.WHITE.rgb
         )
 
     }
 
-    private val renderType = SimpleRenderTypes.flat(ResourceLocation("minecraft:missingno"), GL11.GL_QUADS)
+    private val renderType = SimpleRenderTypes.flat(Identifier("minecraft:missingno"), GL11.GL_QUADS)
 
-    class Test: Shader("matrix_tests", null, ResourceLocation("librarianlib-albedo-test:shaders/matrix_tests.frag")) {
+    class Test: Shader("matrix_tests", null, Identifier("librarianlib-albedo-test:shaders/matrix_tests.frag")) {
         val matrix4x4 = GLSL.mat4()
         val matrix4x3 = GLSL.mat4x3()
         val matrix4x2 = GLSL.mat4x2()

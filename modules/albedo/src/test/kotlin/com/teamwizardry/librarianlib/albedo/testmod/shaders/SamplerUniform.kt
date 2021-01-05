@@ -1,6 +1,5 @@
 package com.teamwizardry.librarianlib.albedo.testmod.shaders
 
-import com.mojang.blaze3d.systems.RenderSystem
 import com.teamwizardry.librarianlib.albedo.GLSL
 import com.teamwizardry.librarianlib.albedo.Shader
 import com.teamwizardry.librarianlib.albedo.testmod.ShaderTest
@@ -11,20 +10,17 @@ import com.teamwizardry.librarianlib.core.util.SimpleRenderTypes
 import com.teamwizardry.librarianlib.core.util.kotlin.color
 import com.teamwizardry.librarianlib.core.util.kotlin.mixinCast
 import com.teamwizardry.librarianlib.core.util.kotlin.pos2d
-import dev.thecodewarrior.mirror.Mirror
-import net.minecraft.client.renderer.IRenderTypeBuffer
-import net.minecraft.client.renderer.RenderState
-import net.minecraft.client.renderer.RenderType
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats
-import net.minecraft.util.ResourceLocation
+import net.minecraft.client.render.RenderLayer
+import net.minecraft.client.render.VertexConsumerProvider
+import net.minecraft.client.render.VertexFormats
+import net.minecraft.util.Identifier
 import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL13
 import java.awt.Color
 
 internal object SamplerUniform: ShaderTest<SamplerUniform.Test>() {
-    private val failureLocation = ResourceLocation("librarianlib-albedo-test:textures/sampler_failure.png")
-    private val successLocation1 = ResourceLocation("librarianlib-albedo-test:textures/sampler_success1.png")
-    private val successLocation2 = ResourceLocation("librarianlib-albedo-test:textures/sampler_success2.png")
+    private val failureLocation = Identifier("librarianlib-albedo-test:textures/sampler_failure.png")
+    private val successLocation1 = Identifier("librarianlib-albedo-test:textures/sampler_success1.png")
+    private val successLocation2 = Identifier("librarianlib-albedo-test:textures/sampler_success2.png")
 
     override fun doDraw() {
         val minX = 0.0
@@ -36,49 +32,49 @@ internal object SamplerUniform: ShaderTest<SamplerUniform.Test>() {
 
         Client.textureManager.bindTexture(successLocation1)
         Client.textureManager.bindTexture(successLocation2)
-        val tex1 = Client.textureManager.getTexture(successLocation1)?.glTextureId ?: throw IllegalStateException("sampler_success1 not found")
-        val tex2 = Client.textureManager.getTexture(successLocation2)?.glTextureId ?: throw IllegalStateException("sampler_success2 not found")
+        val tex1 = Client.textureManager.getTexture(successLocation1)?.glId ?: throw IllegalStateException("sampler_success1 not found")
+        val tex2 = Client.textureManager.getTexture(successLocation2)?.glId ?: throw IllegalStateException("sampler_success2 not found")
         Client.textureManager.bindTexture(failureLocation)
 
-        val buffer = IRenderTypeBuffer.getImpl(Client.tessellator.buffer)
+        val buffer = VertexConsumerProvider.immediate(Client.tessellator.buffer)
         var vb = buffer.getBuffer(renderType)
-        vb.pos2d(minX, maxY).color(c).tex(0f, 1f).endVertex()
-        vb.pos2d(maxX, maxY).color(c).tex(1f, 1f).endVertex()
-        vb.pos2d(maxX, minY).color(c).tex(1f, 0f).endVertex()
-        vb.pos2d(minX, minY).color(c).tex(0f, 0f).endVertex()
+        vb.pos2d(minX, maxY).color(c).texture(0f, 1f).next()
+        vb.pos2d(maxX, maxY).color(c).texture(1f, 1f).next()
+        vb.pos2d(maxX, minY).color(c).texture(1f, 0f).next()
+        vb.pos2d(minX, minY).color(c).texture(0f, 0f).next()
 
-        buffer.finish()
+        buffer.draw()
 
         shader.sampler1.set(tex1)
         shader.sampler2.set(tex2)
 
         vb = buffer.getBuffer(renderType)
 
-        vb.pos2d(minX, maxY).color(c).tex(0f, 2f).endVertex()
-        vb.pos2d(maxX, maxY).color(c).tex(1f, 2f).endVertex()
-        vb.pos2d(maxX, minY).color(c).tex(1f, 0f).endVertex()
-        vb.pos2d(minX, minY).color(c).tex(0f, 0f).endVertex()
+        vb.pos2d(minX, maxY).color(c).texture(0f, 2f).next()
+        vb.pos2d(maxX, maxY).color(c).texture(1f, 2f).next()
+        vb.pos2d(maxX, minY).color(c).texture(1f, 0f).next()
+        vb.pos2d(minX, minY).color(c).texture(0f, 0f).next()
 
-        buffer.finish()
+        buffer.draw()
     }
 
-    private val renderType: RenderType
+    private val renderType: RenderLayer
     init {
 
-        val renderState = RenderType.State.getBuilder()
+        val renderState = RenderLayer.MultiPhaseParameters.builder()
             .alpha(DefaultRenderStates.DEFAULT_ALPHA)
             .depthTest(DefaultRenderStates.DEPTH_LEQUAL)
             .transparency(DefaultRenderStates.TRANSLUCENT_TRANSPARENCY)
             .build(true)
 
-        mixinCast<IMutableRenderTypeState>(renderState).addState("albedo", { shader.bind() }, { shader.unbind() })
+        mixinCast<IMutableRenderTypeState>(renderState).addPhase("albedo", { shader.bind() }, { shader.unbind() })
 
         renderType = SimpleRenderTypes.makeType("flat_texture",
-            DefaultVertexFormats.POSITION_COLOR_TEX, GL11.GL_QUADS, 256, false, false, renderState
+            VertexFormats.POSITION_COLOR_TEXTURE, GL11.GL_QUADS, 256, false, false, renderState
         )
     }
 
-    class Test: Shader("sampler_tests", null, ResourceLocation("librarianlib-albedo-test:shaders/sampler_tests.frag")) {
+    class Test: Shader("sampler_tests", null, Identifier("librarianlib-albedo-test:shaders/sampler_tests.frag")) {
         // we only test sampler2D because all the sampler implementations are identical, and the others will be complex
         // to set up
         val sampler1 = GLSL.sampler2D()

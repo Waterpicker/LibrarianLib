@@ -8,8 +8,8 @@ import com.teamwizardry.librarianlib.core.util.Client
 import com.teamwizardry.librarianlib.core.util.SimpleRenderTypes
 import com.teamwizardry.librarianlib.core.util.kotlin.color
 import com.teamwizardry.librarianlib.core.util.kotlin.pos2d
-import net.minecraft.client.renderer.IRenderTypeBuffer
-import net.minecraft.util.ResourceLocation
+import net.minecraft.client.render.VertexConsumerProvider
+import net.minecraft.util.Identifier
 import org.lwjgl.opengl.GL11
 import java.awt.Color
 
@@ -44,22 +44,22 @@ internal object StructUniform: ShaderTest<StructUniform.Test>() {
         shader.simpleArray[1].embeddedArray[0].embed.set(25f)
         shader.simpleArray[1].embeddedArray[1].embed.set(26f)
 
-        val buffer = IRenderTypeBuffer.getImpl(Client.tessellator.buffer)
+        val buffer = VertexConsumerProvider.immediate(Client.tessellator.buffer)
         val vb = buffer.getBuffer(renderType)
 
-        vb.pos2d(minX, maxY).color(c).tex(0f, 1f).endVertex()
-        vb.pos2d(maxX, maxY).color(c).tex(1f, 1f).endVertex()
-        vb.pos2d(maxX, minY).color(c).tex(1f, 0f).endVertex()
-        vb.pos2d(minX, minY).color(c).tex(0f, 0f).endVertex()
+        vb.pos2d(minX, maxY).color(c).texture(0f, 1f).next()
+        vb.pos2d(maxX, maxY).color(c).texture(1f, 1f).next()
+        vb.pos2d(maxX, minY).color(c).texture(1f, 0f).next()
+        vb.pos2d(minX, minY).color(c).texture(0f, 0f).next()
 
         shader.bind()
-        buffer.finish()
+        buffer.draw()
         shader.unbind()
     }
 
-    private val renderType = SimpleRenderTypes.flat(ResourceLocation("minecraft:missingno"), GL11.GL_QUADS)
+    private val renderType = SimpleRenderTypes.flat(Identifier("minecraft:missingno"), GL11.GL_QUADS)
 
-    class Test: Shader("struct_tests", null, ResourceLocation("librarianlib-albedo-test:shaders/struct_tests.frag")) {
+    class Test: Shader("struct_tests", null, Identifier("librarianlib-albedo-test:shaders/struct_tests.frag")) {
         val simple = GLSL.struct<Simple>()
         val simpleArray = GLSL.struct<Simple>(2)
 
