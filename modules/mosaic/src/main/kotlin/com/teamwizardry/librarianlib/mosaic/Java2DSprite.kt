@@ -4,11 +4,11 @@ import com.teamwizardry.librarianlib.core.util.AWTTextureUtil
 import com.teamwizardry.librarianlib.core.util.DefaultRenderStates
 import com.teamwizardry.librarianlib.core.util.GlResourceGc
 import com.teamwizardry.librarianlib.core.util.loc
-import net.minecraft.client.renderer.RenderState
-import net.minecraft.client.renderer.RenderType
-import net.minecraft.client.renderer.texture.NativeImage
-import net.minecraft.client.renderer.texture.TextureUtil
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats
+import net.minecraft.client.render.RenderLayer
+import net.minecraft.client.render.RenderPhase
+import net.minecraft.client.render.VertexFormats
+import net.minecraft.client.texture.NativeImage
+import net.minecraft.client.texture.TextureUtil
 import org.lwjgl.opengl.GL11
 import java.awt.Color
 import java.awt.Graphics2D
@@ -18,11 +18,11 @@ import java.awt.image.BufferedImage
 public class Java2DSprite(override val width: Int, override val height: Int) : ISprite {
     private val image = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
     private var natives: Pair<Int, NativeImage> by GlResourceGc.track(this,
-        TextureUtil.generateTextureId() to NativeImage(NativeImage.PixelFormat.RGBA, width, height, true)
+        TextureUtil.generateId() to NativeImage(NativeImage.Format.ABGR, width, height, true)
     ) { (texID, native) ->
         if(texID == -1) return@track
         logger.debug("Deleting Java2DSprite $texID")
-        TextureUtil.releaseTextureId(texID)
+        TextureUtil.deleteId(texID)
         native.close()
     }
     private val native: NativeImage
@@ -35,22 +35,22 @@ public class Java2DSprite(override val width: Int, override val height: Int) : I
     private val deleted: Boolean
         get() = texID == -1
 
-    override val renderType: RenderType
+    override val renderType: RenderLayer
 
     init {
-        TextureUtil.prepareImage(texID, width, height)
-        native.uploadTextureSub(0, 0, 0, false)
+        TextureUtil.allocate(texID, width, height)
+        native.upload(0, 0, 0, false)
 
-        val renderState = RenderType.State.getBuilder()
-            .texture(RenderState.TextureState(loc("minecraft:missingno"), false, false))
+        val renderState = RenderLayer.MultiPhaseParameters.builder()
+            .texture(RenderPhase.Texture(loc("minecraft:missingno"), false, false))
             .alpha(DefaultRenderStates.DEFAULT_ALPHA)
             .depthTest(DefaultRenderStates.DEPTH_LEQUAL)
             .transparency(DefaultRenderStates.TRANSLUCENT_TRANSPARENCY)
 //        if(deleted) throw IllegalStateException("Texture has been deleted")
 
         @Suppress("INACCESSIBLE_TYPE")
-        renderType = RenderType.makeType("sprite_type",
-            DefaultVertexFormats.POSITION_COLOR_TEX, GL11.GL_QUADS, 256, false, false, renderState.build(true)
+        renderType = RenderLayer.of("sprite_type",
+            VertexFormats.POSITION_COLOR_TEXTURE, GL11.GL_QUADS, 256, false, false, renderState.build(true)
         )
     }
 
@@ -70,12 +70,12 @@ public class Java2DSprite(override val width: Int, override val height: Int) : I
     public fun end() {
         if(deleted) return
         AWTTextureUtil.fillNativeImage(image, native)
-        native.uploadTextureSub(0, 0, 0, false)
+        native.upload(0, 0, 0, false)
     }
 
     public fun delete() {
         if(deleted) return
-        TextureUtil.releaseTextureId(texID)
+        TextureUtil.deleteId(texID)
         native.close()
         texID = -1
     }

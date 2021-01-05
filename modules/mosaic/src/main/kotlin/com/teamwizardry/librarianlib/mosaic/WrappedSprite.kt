@@ -3,9 +3,9 @@ package com.teamwizardry.librarianlib.mosaic
 import com.teamwizardry.librarianlib.core.util.DefaultRenderStates
 import com.teamwizardry.librarianlib.core.util.loc
 import com.teamwizardry.librarianlib.math.Matrix3d
-import net.minecraft.client.renderer.RenderState
-import net.minecraft.client.renderer.RenderType
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats
+import net.minecraft.client.render.RenderLayer
+import net.minecraft.client.render.RenderPhase
+import net.minecraft.client.render.VertexFormats
 import org.lwjgl.opengl.GL11
 import java.awt.Color
 
@@ -17,7 +17,7 @@ public abstract class WrappedSprite: ISprite {
     override fun maxU(animFrames: Int): Float = wrapped?.maxU(animFrames) ?: 1f
     override fun maxV(animFrames: Int): Float = wrapped?.maxV(animFrames) ?: 1f
 
-    override val renderType: RenderType get() = wrapped?.renderType ?: missingType
+    override val renderType: RenderLayer get() = wrapped?.renderType ?: missingType
     override val width: Int get() = wrapped?.width ?: 1
     override val height: Int get() = wrapped?.height ?: 1
     override val uSize: Float get() = wrapped?.uSize ?: 1f
@@ -42,15 +42,15 @@ public abstract class WrappedSprite: ISprite {
 
     private companion object {
         @Suppress("INACCESSIBLE_TYPE")
-        val missingType: RenderType = run {
-            val renderState = RenderType.State.getBuilder()
-                .texture(RenderState.TextureState(loc("minecraft:missingno"), false, false))
+        val missingType: RenderLayer = run {
+            val renderState = RenderLayer.MultiPhaseParameters.builder()
+                .texture(RenderPhase.Texture(loc("minecraft:missingno"), false, false))
                 .alpha(DefaultRenderStates.DEFAULT_ALPHA)
                 .depthTest(DefaultRenderStates.DEPTH_LEQUAL)
                 .transparency(DefaultRenderStates.TRANSLUCENT_TRANSPARENCY)
 
-            RenderType.makeType("sprite_type",
-                DefaultVertexFormats.POSITION_COLOR_TEX, GL11.GL_QUADS, 256, false, false, renderState.build(true)
+            RenderLayer.of("sprite_type",
+                VertexFormats.POSITION_COLOR_TEXTURE, GL11.GL_QUADS, 256, false, false, renderState.build(true)
             )
         }
     }

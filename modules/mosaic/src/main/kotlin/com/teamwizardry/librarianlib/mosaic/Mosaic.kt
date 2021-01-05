@@ -3,10 +3,10 @@ package com.teamwizardry.librarianlib.mosaic
 import com.teamwizardry.librarianlib.core.util.DefaultRenderStates
 import com.teamwizardry.librarianlib.core.util.kotlin.synchronized
 import com.teamwizardry.librarianlib.core.util.kotlin.weakSetOf
-import net.minecraft.client.renderer.RenderState
-import net.minecraft.client.renderer.RenderType
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats
-import net.minecraft.util.ResourceLocation
+import net.minecraft.client.render.RenderLayer
+import net.minecraft.client.render.RenderPhase
+import net.minecraft.client.render.VertexFormats
+import net.minecraft.util.Identifier
 import org.lwjgl.opengl.GL11
 import java.awt.Color
 import java.awt.image.BufferedImage
@@ -72,7 +72,7 @@ import kotlin.reflect.KProperty
  * ```
  */
 public class Mosaic(
-    public val location: ResourceLocation,
+    public val location: Identifier,
     /**
      * The logical width of this texture in pixels. Used to determine the scaling factor from texture pixels to
      * logical pixels
@@ -88,7 +88,7 @@ public class Mosaic(
     public val image: BufferedImage
         get() = definition.image
 
-    public lateinit var renderType: RenderType
+    public lateinit var renderType: RenderLayer
         private set
 
     private var sprites: MutableMap<String, Sprite> = mutableMapOf()
@@ -103,7 +103,7 @@ public class Mosaic(
 
     internal fun loadDefinition() {
         definition = MosaicLoader.getDefinition(location)
-        renderType = createRenderType(RenderState.TextureState(location, definition.blur, definition.mipmap))
+        renderType = createRenderType(RenderPhase.Texture(location, definition.blur, definition.mipmap))
 
         sprites.forEach { (_, sprite) ->
             sprite.loadDefinition()
@@ -161,19 +161,19 @@ public class Mosaic(
         @get:JvmSynthetic
         internal val textures = weakSetOf<Mosaic>().synchronized()
 
-        private val types = mutableMapOf<RenderState.TextureState, RenderType>()
+        private val types = mutableMapOf<RenderPhase.Texture, RenderLayer>()
 
-        private fun createRenderType(texture: RenderState.TextureState): RenderType {
+        private fun createRenderType(texture: RenderPhase.Texture): RenderLayer {
             return types.getOrPut(texture) {
-                val renderState = RenderType.State.getBuilder()
+                val renderState = RenderLayer.MultiPhaseParameters.builder()
                     .texture(texture)
                     .alpha(DefaultRenderStates.DEFAULT_ALPHA)
                     .depthTest(DefaultRenderStates.DEPTH_LEQUAL)
                     .transparency(DefaultRenderStates.TRANSLUCENT_TRANSPARENCY)
 
                 @Suppress("INACCESSIBLE_TYPE")
-                RenderType.makeType("sprite_type",
-                    DefaultVertexFormats.POSITION_COLOR_TEX, GL11.GL_QUADS, 256, false, false, renderState.build(true)
+                RenderLayer.of("sprite_type",
+                    VertexFormats.POSITION_COLOR_TEXTURE, GL11.GL_QUADS, 256, false, false, renderState.build(true)
                 )
             }
         }

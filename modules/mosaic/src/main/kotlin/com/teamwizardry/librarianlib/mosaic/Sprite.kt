@@ -1,6 +1,6 @@
 package com.teamwizardry.librarianlib.mosaic
 
-import net.minecraft.client.renderer.RenderType
+import net.minecraft.client.render.RenderLayer
 import java.awt.image.BufferedImage
 
 /**
@@ -9,7 +9,7 @@ import java.awt.image.BufferedImage
 public class Sprite internal constructor(private val mosaic: Mosaic, public val name: String) : ISprite {
 
     private lateinit var definition: SpriteDefinition
-    override val renderType: RenderType
+    override val renderType: RenderLayer
         get() = mosaic.renderType
 
     override var width: Int = 0

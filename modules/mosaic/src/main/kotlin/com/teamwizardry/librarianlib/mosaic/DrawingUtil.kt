@@ -1,14 +1,13 @@
 package com.teamwizardry.librarianlib.mosaic
 
-import com.mojang.blaze3d.vertex.IVertexBuilder
 import com.teamwizardry.librarianlib.core.util.kotlin.color
 import com.teamwizardry.librarianlib.core.util.kotlin.pos2d
-import com.teamwizardry.librarianlib.core.util.kotlin.tex
 import com.teamwizardry.librarianlib.math.Matrix3d
+import net.minecraft.client.render.VertexConsumer
 import java.awt.Color
 
 internal object DrawingUtil {
-    fun draw(sprite: ISprite, vb: IVertexBuilder, matrix: Matrix3d, x: Float, y: Float, width: Float, height: Float, animFrames: Int, tint: Color) {
+    fun draw(sprite: ISprite, vb: VertexConsumer, matrix: Matrix3d, x: Float, y: Float, width: Float, height: Float, animFrames: Int, tint: Color) {
         if(sprite.pinTop && sprite.pinBottom && sprite.pinLeft && sprite.pinRight &&
             sprite.minUCap == 0f && sprite.minVCap == 0f && sprite.maxUCap == 0f && sprite.maxVCap == 0f) {
             drawSimple(sprite, vb, matrix, x, y, width, height, animFrames, tint)
@@ -17,7 +16,7 @@ internal object DrawingUtil {
         }
     }
 
-    private fun drawSimple(sprite: ISprite, vb: IVertexBuilder, matrix: Matrix3d, x: Float, y: Float, width: Float, height: Float, animFrames: Int, tint: Color) {
+    private fun drawSimple(sprite: ISprite, vb: VertexConsumer, matrix: Matrix3d, x: Float, y: Float, width: Float, height: Float, animFrames: Int, tint: Color) {
         val minX = x
         val minY = y
         val maxX = x + width
@@ -28,13 +27,13 @@ internal object DrawingUtil {
         val minV = sprite.minV(animFrames)
         val maxV = sprite.maxV(animFrames)
 
-        vb.pos2d(matrix, minX, maxY).color(tint).tex(minU, maxV).endVertex()
-        vb.pos2d(matrix, maxX, maxY).color(tint).tex(maxU, maxV).endVertex()
-        vb.pos2d(matrix, maxX, minY).color(tint).tex(maxU, minV).endVertex()
-        vb.pos2d(matrix, minX, minY).color(tint).tex(minU, minV).endVertex()
+        vb.pos2d(matrix, minX, maxY).color(tint).texture(minU, maxV).next()
+        vb.pos2d(matrix, maxX, maxY).color(tint).texture(maxU, maxV).next()
+        vb.pos2d(matrix, maxX, minY).color(tint).texture(maxU, minV).next()
+        vb.pos2d(matrix, minX, minY).color(tint).texture(minU, minV).next()
     }
 
-    private fun drawComplex(sprite: ISprite, vb: IVertexBuilder, matrix: Matrix3d, x: Float, y: Float, width: Float, height: Float, animFrames: Int, tint: Color) {
+    private fun drawComplex(sprite: ISprite, vb: VertexConsumer, matrix: Matrix3d, x: Float, y: Float, width: Float, height: Float, animFrames: Int, tint: Color) {
 
         val xSections = getSections(
             logicalSize = sprite.width.toFloat(),
@@ -74,10 +73,10 @@ internal object DrawingUtil {
                     xSection.minTex, ySection.minTex
                 )
 
-                vb.pos2d(matrix, minX, maxY).color(tint).tex(u0, v0).endVertex()
-                vb.pos2d(matrix, maxX, maxY).color(tint).tex(u1, v1).endVertex()
-                vb.pos2d(matrix, maxX, minY).color(tint).tex(u2, v2).endVertex()
-                vb.pos2d(matrix, minX, minY).color(tint).tex(u3, v3).endVertex()
+                vb.pos2d(matrix, minX, maxY).color(tint).texture(u0.toFloat(), v0.toFloat()).next()
+                vb.pos2d(matrix, maxX, maxY).color(tint).texture(u1.toFloat(), v1.toFloat()).next()
+                vb.pos2d(matrix, maxX, minY).color(tint).texture(u2.toFloat(), v2.toFloat()).next()
+                vb.pos2d(matrix, minX, minY).color(tint).texture(u3.toFloat(), v3.toFloat()).next()
             }
         }
     }

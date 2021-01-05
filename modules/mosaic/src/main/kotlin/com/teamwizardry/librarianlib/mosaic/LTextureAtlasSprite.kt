@@ -1,8 +1,8 @@
 package com.teamwizardry.librarianlib.mosaic
 
 import com.teamwizardry.librarianlib.core.util.SimpleRenderTypes
-import net.minecraft.client.renderer.RenderType
-import net.minecraft.client.renderer.texture.TextureAtlasSprite
+import net.minecraft.client.render.RenderLayer
+import net.minecraft.client.texture.Sprite
 
 /**
  * [ISprite] wrapper for [TextureAtlasSprite].
@@ -10,9 +10,9 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite
  *
  * Nothing special needs to be done for animations to work ([TextureAtlasSprite] handles them out of the box).
  */
-public class LTextureAtlasSprite(private val tas: TextureAtlasSprite) : ISprite {
+public class LTextureAtlasSprite(private val tas: Sprite) : ISprite {
 
-    override val renderType: RenderType = SimpleRenderTypes.flat(tas.atlasTexture.textureLocation)
+    override val renderType: RenderLayer = SimpleRenderTypes.flat(tas.atlas.id)
 
     override fun minU(animFrames: Int): Float = tas.minU
 

@@ -11,7 +11,6 @@ import com.teamwizardry.librarianlib.mosaic.LibrarianLibMosaicModule
 import com.teamwizardry.librarianlib.mosaic.Mosaic
 import com.teamwizardry.librarianlib.testbase.TestMod
 import net.minecraftforge.fml.common.Mod
-import org.apache.logging.log4j.LogManager
 import java.awt.Color
 
 @Mod("librarianlib-mosaic-test")

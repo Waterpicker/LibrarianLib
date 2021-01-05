@@ -2,9 +2,8 @@ package com.teamwizardry.librarianlib.mosaic
 
 import com.teamwizardry.librarianlib.core.util.Client
 import com.teamwizardry.librarianlib.math.Matrix3d
-import net.minecraft.client.renderer.IRenderTypeBuffer
-import net.minecraft.client.renderer.RenderType
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats
+import net.minecraft.client.render.RenderLayer
+import net.minecraft.client.render.VertexConsumerProvider
 import org.lwjgl.opengl.GL11
 import java.awt.Color
 
@@ -19,7 +18,7 @@ public interface ISprite {
      * The render type to be used when drawing. The renderer expects this type to be drawing [GL11.GL_QUADS]
      * using [DefaultVertexFormats.POSITION_COLOR_TEX]
      */
-    public val renderType: RenderType
+    public val renderType: RenderLayer
 
     /**
      * The logical width of this sprite.
@@ -174,10 +173,10 @@ public interface ISprite {
      * @param height The height to draw the sprite
      */
     public fun draw(matrix: Matrix3d, x: Float, y: Float, width: Float, height: Float, animTicks: Int, tint: Color) {
-        val buffer = IRenderTypeBuffer.getImpl(Client.tessellator.buffer)
+        val buffer = VertexConsumerProvider.immediate(Client.tessellator.buffer)
         val builder = buffer.getBuffer(renderType)
         DrawingUtil.draw(this, builder, matrix, x, y, width, height, animTicks, tint)
-        buffer.finish()
+        buffer.draw()
     }
 
     public fun pinnedWrapper(top: Boolean, bottom: Boolean, left: Boolean, right: Boolean): ISprite {
