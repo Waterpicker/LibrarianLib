@@ -1,12 +1,13 @@
 package com.teamwizardry.librarianlib.etcetera.example.raycasting;
 
-import com.teamwizardry.librarianlib.etcetera.Raycaster;
+import java.util.function.Predicate;
+
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 
-import java.util.function.Predicate;
+import com.teamwizardry.librarianlib.etcetera.Raycaster;
 
 public class AdvancedRaycastExample {
     // note: Raycaster is *not* thread-safe, though world should only be
@@ -17,8 +18,8 @@ public class AdvancedRaycastExample {
 
     public void advancedRaycast(Entity entity) {
         double rayLength = 100;
-        Vec3d start = entity.getEyePosition(0);
-        Vec3d look = entity.getLookVec();
+        Vec3d start = entity.getCameraPosVec(0);
+        Vec3d look = entity.getRotationVector();
         look = new Vec3d(
                 look.getX() * rayLength,
                 look.getY() * rayLength,

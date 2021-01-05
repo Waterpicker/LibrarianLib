@@ -1,53 +1,49 @@
 package com.teamwizardry.librarianlib.etcetera.testmod
 
-import net.minecraft.client.particle.IAnimatedSprite
-import net.minecraft.client.particle.IParticleFactory
-import net.minecraft.client.particle.IParticleRenderType
-import net.minecraft.client.particle.Particle
-import net.minecraft.client.particle.SpriteTexturedParticle
-import net.minecraft.particles.BasicParticleType
-import net.minecraft.world.World
-import net.minecraftforge.api.distmarker.Dist
-import net.minecraftforge.api.distmarker.OnlyIn
+import net.fabricmc.api.EnvType
+import net.fabricmc.api.Environment
+import net.minecraft.client.particle.*
+import net.minecraft.client.world.ClientWorld
+import net.minecraft.particle.DefaultParticleType
 
 object Particles {
-    val TARGET_RED: BasicParticleType = BasicParticleType(true).also {
+    val TARGET_RED: DefaultParticleType = DefaultParticleType(true).also {
         it.setRegistryName("librarianlib-etcetera-test:target_red")
     }
-    val TARGET_BLUE: BasicParticleType = BasicParticleType(true).also {
+    val TARGET_BLUE: DefaultParticleType = DefaultParticleType(true).also {
         it.setRegistryName("librarianlib-etcetera-test:target_blue")
     }
 }
 
-@OnlyIn(Dist.CLIENT)
-class HitParticle private constructor(world: World, x: Double, y: Double, z: Double): SpriteTexturedParticle(world, x, y, z, 0.0, 0.0, 0.0) {
+@Environment(EnvType.CLIENT)
+class HitParticle private constructor(world: ClientWorld, x: Double, y: Double, z: Double): SpriteBillboardParticle(world, x, y, z, 0.0, 0.0, 0.0) {
     init {
         maxAge = 1
-        canCollide = false
+        collidesWithWorld = false
     }
 
-    override fun getRenderType(): IParticleRenderType {
-        return IParticleRenderType.PARTICLE_SHEET_OPAQUE
+    override fun getType(): ParticleTextureSheet {
+        return ParticleTextureSheet.PARTICLE_SHEET_OPAQUE
     }
 
-    override fun getScale(p_217561_1_: Float): Float {
+    override fun getSize(p_217561_1_: Float): Float {
         return 0.5f
     }
 
     override fun tick() {
-        prevPosX = posX
-        prevPosY = posY
-        prevPosZ = posZ
+        prevPosX = x
+        prevPosY = y
+        prevPosZ = z
         if (age++ >= maxAge) {
-            setExpired()
+            markDead()
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
-    class Factory(private val spriteSet: IAnimatedSprite): IParticleFactory<BasicParticleType> {
-        override fun makeParticle(typeIn: BasicParticleType, worldIn: World, x: Double, y: Double, z: Double, xSpeed: Double, ySpeed: Double, zSpeed: Double): Particle? {
+    @Environment(EnvType.CLIENT)
+    class Factory(private val spriteSet: SpriteProvider): ParticleFactory<DefaultParticleType> {
+        override fun createParticle(typeIn: DefaultParticleType, worldIn: ClientWorld, x: Double, y: Double, z: Double, xSpeed: Double, ySpeed: Double, zSpeed: Double): Particle? {
             val hitParticle = HitParticle(worldIn, x, y, z)
-            hitParticle.selectSpriteRandomly(spriteSet)
+            hitParticle.setSprite(spriteSet)
             return hitParticle
         }
     }
